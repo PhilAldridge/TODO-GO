@@ -1,47 +1,48 @@
 package store
 
 import (
-	"fmt"
-	"io"
 	"time"
+
 	"github.com/google/uuid"
 )
 
 type TodoList struct {
-	todos []Todo
+	todos map[uuid.UUID]Todo
 }
 
 type Todo struct {
-	id        string
-	label     string
-	author    string
-	completed bool
-	deadline  time.Time
+	Label     string
+	Author    string
+	Completed bool
+	Deadline  time.Time
 }
 
 func NewTodoList() *TodoList {
 	t := TodoList{
-		todos: []Todo{},
+		todos: make(map[uuid.UUID]Todo),
 	}
 	return &t
 }
 
 func (t *TodoList) AddTodo(label string, author string, deadline time.Time) {
-	t.todos = append(t.todos, Todo{
-		id:        uuid.NewString(),
-		label:     label,
-		author:    author,
-		completed: false,
-		deadline:  deadline,
-	})
+	t.todos[uuid.New()] = Todo{
+		Label:     label,
+		Author:    author,
+		Completed: false,
+		Deadline:  deadline,
+	}
 }
 
-func (t *TodoList) ListTodos(writer io.Writer) {
-	for _, todo := range t.todos {
-		completionSymbol := "☐"
-		if todo.completed {
-			completionSymbol = "☑"
-		}
-		fmt.Fprintf(writer, "%s - Due by: %s - %s\n", todo.label, todo.deadline.Format("01/02/2006"), completionSymbol)
+func (t *TodoList) ListTodos() {
+
+}
+
+func (t *TodoList) PatchTodo(id uuid.UUID, label string, deadline time.Time, completed bool) (Todo, error) {
+	t.todos[id] = Todo{
+		Label:     label,
+		Author:    t.todos[id].Author,
+		Completed: completed,
+		Deadline:  deadline,
 	}
+	return t.todos[id], nil
 }
