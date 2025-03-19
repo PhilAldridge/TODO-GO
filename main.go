@@ -9,9 +9,9 @@ import (
 )
 
 func main() {
-	store := store.NewTodoList()
+	var myStore store.Store = store.NewTodoStore()
 
-	cmd := cli.NewCmd(os.Stdout,store)
+	cmd := cli.NewCmd(os.Stdout, myStore)
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stdout, err)
 		os.Exit(1)

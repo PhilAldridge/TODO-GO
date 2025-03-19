@@ -7,62 +7,62 @@ import (
 	"github.com/google/uuid"
 )
 
-type TodoList struct {
-	todos map[uuid.UUID]Todo
+type InMemoryStore struct {
+	Store
+	todos []Todo
 }
 
-type Todo struct {
-	Label     string
-	Author    string
-	Completed bool
-	Deadline  time.Time
+func NewTodoStore() *InMemoryStore {
+	s:= InMemoryStore{}
+	return &s
 }
 
-func NewTodoList() *TodoList {
-	t := TodoList{
-		todos: make(map[uuid.UUID]Todo),
-	}
-	return &t
-}
-
-func (t *TodoList) AddTodo(label string, author string, deadline time.Time) (uuid.UUID, error) {
+func (t *InMemoryStore) AddTodo(label string, deadline time.Time) (uuid.UUID, error) {
 	newUuid := uuid.New()
 
-	t.todos[newUuid] = Todo{
+	t.todos = append(t.todos, Todo{
+		Id: newUuid,
 		Label:     label,
-		Author:    author,
 		Completed: false,
 		Deadline:  deadline,
-	}
+	})
 	return newUuid, nil
 }
 
-func (t *TodoList) ListTodos() map[uuid.UUID]Todo {
+func (t *InMemoryStore) GetTodos() []Todo {
 	return t.todos
 }
 
-func (t *TodoList) PatchTodo(id uuid.UUID, label string, deadline time.Time, completed bool) (Todo, error) {
-	t.todos[id] = Todo{
-		Label:     label,
-		Author:    t.todos[id].Author,
-		Completed: completed,
-		Deadline:  deadline,
+func (t *InMemoryStore) UpdateTodo(id uuid.UUID, label string, deadline time.Time, completed bool) (Todo, error) {
+	for i,todo:= range t.todos {
+		if todo.Id == id {
+			t.todos[i] = Todo{
+				Id: id,
+				Label: label,
+				Deadline: deadline,
+				Completed: completed,
+			}
+			return t.todos[i],nil
+		}
 	}
-	return t.todos[id], nil
+	return Todo{}, errors.New("todo not found")
 }
 
-func (t *TodoList) GetTodo(id uuid.UUID) (Todo, error) {
-	todo, ok := t.todos[id]
-	if !ok {
-		return Todo{}, errors.New("todo not found")
+func (t *InMemoryStore) GetTodoById(id uuid.UUID) (Todo, error) {
+	for _,todo:=range t.todos {
+		if todo.Id == id {
+			return todo,nil
+		}
 	}
-	return todo, nil
+	return Todo{}, errors.New("todo not found")
 }
 
-func (t *TodoList) DeleteTodo(id uuid.UUID) error {
-	if _, ok := t.todos[id]; !ok {
-		return errors.New("todo not found")
+func (t *InMemoryStore) DeleteTodo(id uuid.UUID) error {
+	for i,todo:= range t.todos {
+		if todo.Id == id {
+			t.todos = append(t.todos[:i], t.todos[i+1:]...)
+			return nil
+		}
 	}
-	delete(t.todos, id)
-	return nil
+	return errors.New("todo not found")
 }
