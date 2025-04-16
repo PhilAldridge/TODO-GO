@@ -9,8 +9,8 @@ import (
 )
 
 func main() {
-	var myStore store.Store = store.NewTodoStore()
-
+	//var myStore store.Store = store.NewInMemoryTodoStore()
+	var myStore store.Store = &store.JSONStore{}
 	cmd := cli.NewCmd(os.Stdout, myStore)
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stdout, err)

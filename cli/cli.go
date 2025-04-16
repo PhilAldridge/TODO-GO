@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/PhilAldridge/TODO-GO/store"
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -14,7 +15,7 @@ func NewCmd(output io.Writer, store store.Store) *cobra.Command {
 		Use:   "todo",
 		Short: "A CLI todo app",
 	}
-	cmd.AddCommand(addCmd(output, store), listCmd(output, store))
+	cmd.AddCommand(addCmd(output, store), listCmd(output, store), getCmd(output,store))
 	return cmd
 }
 
@@ -52,6 +53,28 @@ func listCmd(output io.Writer, store store.Store) *cobra.Command {
 				fmt.Fprintf(output, "%s\nAdded: %s\nCompleted: %t\n\n",
 					v.Label, v.Deadline.Format("2006-01-02"), v.Completed)
 			}
+		},
+	}
+}
+
+func getCmd(output io.Writer, store store.Store) *cobra.Command {
+	return &cobra.Command{
+		Use: "get",
+		Short: "Get a todo by its id",
+		Run: func(cmd *cobra.Command, args []string) {
+			id, err := uuid.Parse(args[0])
+			if err != nil {
+				fmt.Fprintf(output, "uuid not in correct format: %s", err)
+				return
+			}
+			todo, err:= store.GetTodoById(id)
+			if err != nil {
+				fmt.Fprintf(output, "uuid not in correct format: %s", err)
+				return
+			}
+
+			fmt.Fprintf(output, "%s\nAdded: %s\nCompleted: %t\n\n",
+					todo.Label, todo.Deadline.Format("2006-01-02"), todo.Completed)
 		},
 	}
 }
