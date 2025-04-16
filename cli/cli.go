@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"io"
+	"strconv"
 	"time"
 
 	"github.com/PhilAldridge/TODO-GO/store"
@@ -15,7 +16,13 @@ func NewCmd(output io.Writer, store store.Store) *cobra.Command {
 		Use:   "todo",
 		Short: "A CLI todo app",
 	}
-	cmd.AddCommand(addCmd(output, store), listCmd(output, store), getCmd(output,store))
+	cmd.AddCommand(
+		addCmd(output, store), 
+		listCmd(output, store),
+		getCmd(output, store), 
+		updateCmd(output, store),
+		deleteCmd(output,store),
+		)
 	return cmd
 }
 
@@ -59,7 +66,7 @@ func listCmd(output io.Writer, store store.Store) *cobra.Command {
 
 func getCmd(output io.Writer, store store.Store) *cobra.Command {
 	return &cobra.Command{
-		Use: "get",
+		Use:   "get [id]",
 		Short: "Get a todo by its id",
 		Run: func(cmd *cobra.Command, args []string) {
 			id, err := uuid.Parse(args[0])
@@ -67,14 +74,76 @@ func getCmd(output io.Writer, store store.Store) *cobra.Command {
 				fmt.Fprintf(output, "uuid not in correct format: %s", err)
 				return
 			}
-			todo, err:= store.GetTodoById(id)
+			todo, err := store.GetTodoById(id)
 			if err != nil {
-				fmt.Fprintf(output, "uuid not in correct format: %s", err)
+				fmt.Fprintf(output, "todo not found: %s", err)
 				return
 			}
 
 			fmt.Fprintf(output, "%s\nAdded: %s\nCompleted: %t\n\n",
-					todo.Label, todo.Deadline.Format("2006-01-02"), todo.Completed)
+				todo.Label, todo.Deadline.Format("2006-01-02"), todo.Completed)
+		},
+	}
+}
+
+func updateCmd(output io.Writer, store store.Store) *cobra.Command {
+	return &cobra.Command{
+		Use:   "update [id] [key] [value]",
+		Short: "Update a todo",
+		Args:  cobra.ExactArgs(3),
+		Run: func(cmd *cobra.Command, args []string) {
+			id, err := uuid.Parse(args[0])
+			if err != nil {
+				fmt.Fprintf(output, "uuid not in correct format: %s", err)
+				return
+			}
+			todo, err := store.GetTodoById(id)
+			if err != nil {
+				fmt.Fprintf(output, "todo not found: %s", err)
+				return
+			}
+			switch args[1] {
+			case "Label":
+				todo.Label = args[2]
+			case "Deadline":
+				todo.Deadline, err = time.Parse("2006-01-01", args[2])
+				if err != nil {
+					fmt.Fprintf(output, "time not in correct format: %s", err)
+					return
+				}
+			case "Completed":
+				todo.Completed, err = strconv.ParseBool(args[2])
+				if err != nil {
+					fmt.Fprintf(output, "completed field must be true or false: %s", err)
+					return
+				}
+			default:
+				fmt.Fprintf(output, "You must update a valid field")
+			}
+			store.UpdateTodo(id, todo.Label, todo.Deadline, todo.Completed)
+			fmt.Fprintf(output, "Todo updated:\n%s\nAdded: %s\nCompleted: %t\n\n",
+				todo.Label, todo.Deadline.Format("2006-01-02"), todo.Completed)
+		},
+	}
+}
+
+func deleteCmd(output io.Writer, store store.Store) *cobra.Command {
+	return &cobra.Command{
+		Use:   "delete [id]",
+		Short: "Delete a todo by its id",
+		Run: func(cmd *cobra.Command, args []string) {
+			id, err := uuid.Parse(args[0])
+			if err != nil {
+				fmt.Fprintf(output, "uuid not in correct format: %s", err)
+				return
+			}
+			err = store.DeleteTodo(id)
+			if err != nil {
+				fmt.Fprintf(output, "todo not found: %s", err)
+				return
+			}
+
+			fmt.Fprintf(output, "Todo deleted")
 		},
 	}
 }
