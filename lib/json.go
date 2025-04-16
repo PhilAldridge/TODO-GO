@@ -30,16 +30,6 @@ func ReadJson() []models.Todo {
 }
 
 func WriteJson(data []models.Todo) {
-	// file, err:= os.Open("todoStore.json")
-
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// defer file.Close()
-
-
-	// encoder:= json.NewEncoder(file)
-	// encoder.Encode(data)
 	jsonString,_:= json.Marshal(data)
 	os.WriteFile("todoStore.json",jsonString,os.ModePerm) 
 }
