@@ -3,6 +3,7 @@ package router
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/PhilAldridge/TODO-GO/store"
 	"github.com/google/uuid"
@@ -19,20 +20,34 @@ func NewApiHandler(store store.Store) ApiHandler {
 func (h *ApiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case r.Method == http.MethodPut:
-		h.CreateTodo(w,r)
+		h.handlePut(w,r)
 	case r.Method == http.MethodGet:
 		h.handleGet(w,r)
 	case r.Method == http.MethodPatch:
-		h.UpdateTodo(w,r)
+		h.handlePatch(w,r)
 	case r.Method == http.MethodDelete:
-		h.DeleteTodo(w,r)
+		h.handleDelete(w,r)
 	default:
 		http.Error(w,"Invalid request", http.StatusBadRequest)
 	}
 }
 
-func (h *ApiHandler) CreateTodo(w http.ResponseWriter, r *http.Request) {
-	
+func (h *ApiHandler) handlePut(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	label:= r.Form.Get("label")
+	deadlineString:= r.Form.Get("deadline")
+	deadline,err:= time.Parse("2006-01-02",deadlineString)
+	if label =="" || err!=nil {
+		http.Error(w,"Put must include a todo label and a deadline (in the form 2006-01-02)",http.StatusBadRequest)
+		return
+	}
+	todoId, err:= h.store.AddTodo(label,deadline)
+	if err != nil {
+		http.Error(w,fmt.Sprintf(`{"error": "%s"}`, err),2)//TODO
+		return
+	}
+	//marshalAndWrite(w,todoId)
+	w.Write([]byte(todoId.String()))
 }
 
 func (h *ApiHandler) handleGet(w http.ResponseWriter, r *http.Request)    {
@@ -45,12 +60,42 @@ func (h *ApiHandler) handleGet(w http.ResponseWriter, r *http.Request)    {
 	}
 	todo, err:= h.store.GetTodoById(uuid)
 	if err != nil {
-		writeJSONResponse(w, 3, []byte(fmt.Sprintf(`{"error": "%s"}`, err))) //TODO
+		http.Error(w,fmt.Sprintf(`{"error": "%s"}`, err),2)//TODO
 		return
 	}
 	marshalAndWrite(w,todo)
 }
 
-func (h *ApiHandler) UpdateTodo(w http.ResponseWriter, r *http.Request) {}
+func (h *ApiHandler) handlePatch(w http.ResponseWriter, r *http.Request) {
+	// r.ParseForm()
+	// id:= r.Form.Get("id")
+	// label:= r.Form.Get("label")
+	// deadline:= r.Form.Get("deadline")
+	// completed:= r.Form.Get("completed")
+	
+	// uuid, err := uuid.Parse(id)
+	// if id == "" || err != nil {
+	// 	http.Error(w,"Error: patch method requires a valid id",http.StatusBadRequest)
+	// 	return
+	// }
 
-func (h *ApiHandler) DeleteTodo(w http.ResponseWriter, r *http.Request) {}
+	//todo,err:= h.store.UpdateTodo(uuid,label,deadline,completed)
+}
+
+func (h *ApiHandler) handleDelete(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	id:= r.Form.Get("id")
+
+	uuid, err := uuid.Parse(id)
+	if id == "" || err != nil {
+		http.Error(w,"Error: delete method requires a valid id",http.StatusBadRequest)
+		return
+	}
+
+	err = h.store.DeleteTodo(uuid)
+	if err != nil {
+		http.Error(w,fmt.Sprintf(`{"error": "%s"}`, err),http.StatusNotFound)//TODO
+		return
+	}
+	w.Write([]byte("Todo Deleted Successfully"))
+}
