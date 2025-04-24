@@ -4,8 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
+	"os"
 
+	"github.com/PhilAldridge/TODO-GO/logging"
 	"github.com/PhilAldridge/TODO-GO/router"
 	"github.com/PhilAldridge/TODO-GO/store"
 )
@@ -32,11 +35,18 @@ func main() {
 		log.Fatal("valid modes: json, mem")
 	}
 
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+    slog.SetDefault(logger)
+
 	fmt.Println("Server listening on :8080")
 	mux := http.NewServeMux()
 	api:= router.NewApiHandler(todoStore)
 
 	mux.Handle("/Todos/", &api)
 	mux.Handle("/Todos", &api)
-	http.ListenAndServe(":8080",mux)
+	wrapped := logging.WithTraceIDAndLogger(
+		logging.LoggingMiddleware(mux),
+	)
+
+    http.ListenAndServe(":8080", wrapped)
 }
