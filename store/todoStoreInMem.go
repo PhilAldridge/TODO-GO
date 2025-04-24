@@ -3,6 +3,7 @@ package store
 import (
 	"errors"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/PhilAldridge/TODO-GO/models"
@@ -12,6 +13,7 @@ import (
 type InMemoryStore struct {
 	Store
 	todos []models.Todo
+	mutex sync.Mutex
 }
 
 func NewInMemoryTodoStore() *InMemoryStore {
@@ -25,6 +27,9 @@ func LoadInMemoryTodoStore(todos []models.Todo) *InMemoryStore {
 }
 
 func (t *InMemoryStore) AddTodo(label string, deadline time.Time) (uuid.UUID, error) {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
 	newUuid := uuid.New()
 
 	t.todos = append(t.todos, models.Todo{
@@ -37,10 +42,16 @@ func (t *InMemoryStore) AddTodo(label string, deadline time.Time) (uuid.UUID, er
 }
 
 func (t *InMemoryStore) GetTodos() []models.Todo {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
 	return t.todos
 }
 
 func (t *InMemoryStore) UpdateTodo(id uuid.UUID, field string, updatedValue string) (models.Todo, error) {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
 	for i, todo := range t.todos {
 		if todo.Id == id {
 			switch field {
@@ -68,6 +79,9 @@ func (t *InMemoryStore) UpdateTodo(id uuid.UUID, field string, updatedValue stri
 }
 
 func (t *InMemoryStore) GetTodoById(id uuid.UUID) (models.Todo, error) {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
 	for _, todo := range t.todos {
 		if todo.Id == id {
 			return todo, nil
@@ -77,6 +91,9 @@ func (t *InMemoryStore) GetTodoById(id uuid.UUID) (models.Todo, error) {
 }
 
 func (t *InMemoryStore) DeleteTodo(id uuid.UUID) error {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	
 	for i, todo := range t.todos {
 		if todo.Id == id {
 			t.todos = append(t.todos[:i], t.todos[i+1:]...)

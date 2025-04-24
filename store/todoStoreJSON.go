@@ -1,6 +1,7 @@
 package store
 
 import (
+	"sync"
 	"time"
 
 	"github.com/PhilAldridge/TODO-GO/lib"
@@ -10,10 +11,14 @@ import (
 
 type JSONStore struct {
 	Store
+	mutex sync.Mutex
 }
 
 
 func (t *JSONStore) AddTodo(label string, deadline time.Time) (uuid.UUID, error) {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
 	todos := lib.ReadJson()
 	store:= LoadInMemoryTodoStore(todos)
 	newUuid,err := store.AddTodo(label,deadline)
@@ -24,12 +29,18 @@ func (t *JSONStore) AddTodo(label string, deadline time.Time) (uuid.UUID, error)
 }
 
 func (t *JSONStore) GetTodos() []models.Todo {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
 	todos := lib.ReadJson()
 
 	return todos
 }
 
 func (t *JSONStore) UpdateTodo(id uuid.UUID, field string, updatedValue string) (models.Todo, error) {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	
 	todos := lib.ReadJson()
 	store:= LoadInMemoryTodoStore(todos)
 	todo,err:= store.UpdateTodo(id,field,updatedValue)
@@ -40,12 +51,18 @@ func (t *JSONStore) UpdateTodo(id uuid.UUID, field string, updatedValue string) 
 }
 
 func (t *JSONStore) GetTodoById(id uuid.UUID) (models.Todo, error) {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
 	todos := lib.ReadJson()
 	store:= LoadInMemoryTodoStore(todos)
 	return store.GetTodoById(id)
 }
 
 func (t *JSONStore) DeleteTodo(id uuid.UUID) error {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	
 	todos := lib.ReadJson()
 	store:= LoadInMemoryTodoStore(todos)
 	err:= store.DeleteTodo(id)
