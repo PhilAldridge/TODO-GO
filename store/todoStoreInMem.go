@@ -19,6 +19,11 @@ func NewInMemoryTodoStore() *InMemoryStore {
 	return &s
 }
 
+func LoadInMemoryTodoStore(todos []models.Todo) *InMemoryStore {
+	s := InMemoryStore{todos:todos}
+	return &s
+}
+
 func (t *InMemoryStore) AddTodo(label string, deadline time.Time) (uuid.UUID, error) {
 	newUuid := uuid.New()
 
@@ -42,7 +47,7 @@ func (t *InMemoryStore) UpdateTodo(id uuid.UUID, field string, updatedValue stri
 			case "label":
 				t.todos[i].Label = updatedValue
 			case "deadline":
-				newDeadline, err:= time.Parse("2006-01-01",updatedValue)
+				newDeadline, err:= time.Parse("2006-01-02",updatedValue)
 				if err != nil {
 					return models.Todo{},err
 				}

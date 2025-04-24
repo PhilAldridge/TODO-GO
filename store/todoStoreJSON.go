@@ -1,8 +1,6 @@
 package store
 
 import (
-	"errors"
-	"strconv"
 	"time"
 
 	"github.com/PhilAldridge/TODO-GO/lib"
@@ -17,18 +15,12 @@ type JSONStore struct {
 
 func (t *JSONStore) AddTodo(label string, deadline time.Time) (uuid.UUID, error) {
 	todos := lib.ReadJson()
-
-	newUuid := uuid.New()
-
-	todos = append(todos, models.Todo{
-		Id: newUuid,
-		Label:     label,
-		Completed: false,
-		Deadline:  deadline,
-	})
-
-	lib.WriteJson(todos)
-	return newUuid, nil
+	store:= LoadInMemoryTodoStore(todos)
+	newUuid,err := store.AddTodo(label,deadline)
+	if err== nil {
+		lib.WriteJson(store.GetTodos())
+	}
+	return newUuid, err
 }
 
 func (t *JSONStore) GetTodos() []models.Todo {
@@ -39,54 +31,26 @@ func (t *JSONStore) GetTodos() []models.Todo {
 
 func (t *JSONStore) UpdateTodo(id uuid.UUID, field string, updatedValue string) (models.Todo, error) {
 	todos := lib.ReadJson()
-
-	for i,todo:= range todos {
-		if todo.Id == id {
-			switch field {
-			case "label":
-				todos[i].Label = updatedValue
-			case "deadline":
-				newDeadline, err:= time.Parse("2006-01-01",updatedValue)
-				if err != nil {
-					return models.Todo{},err
-				}
-				todos[i].Deadline = newDeadline
-			case "completed":
-				newCompleted, err:= strconv.ParseBool(updatedValue)
-				if err != nil {
-					return models.Todo{},err
-				}
-				todos[i].Completed = newCompleted
-			default:
-				return models.Todo{}, errors.New("allowed update fields: label, deadline, completed")
-			}
-			lib.WriteJson(todos)
-			return todos[i],nil
-		}
+	store:= LoadInMemoryTodoStore(todos)
+	todo,err:= store.UpdateTodo(id,field,updatedValue)
+	if err== nil {
+		lib.WriteJson(store.GetTodos())
 	}
-	return models.Todo{}, errors.New("todo not found")
+	return todo,err
 }
 
 func (t *JSONStore) GetTodoById(id uuid.UUID) (models.Todo, error) {
 	todos := lib.ReadJson()
-
-	for _,todo:=range todos {
-		if todo.Id == id {
-			return todo,nil
-		}
-	}
-	return models.Todo{}, errors.New("todo not found")
+	store:= LoadInMemoryTodoStore(todos)
+	return store.GetTodoById(id)
 }
 
 func (t *JSONStore) DeleteTodo(id uuid.UUID) error {
 	todos := lib.ReadJson()
-	
-	for i,todo:= range todos {
-		if todo.Id == id {
-			todos = append(todos[:i], todos[i+1:]...)
-			lib.WriteJson(todos)
-			return nil
-		}
+	store:= LoadInMemoryTodoStore(todos)
+	err:= store.DeleteTodo(id)
+	if err== nil {
+		lib.WriteJson(store.GetTodos())
 	}
-	return errors.New("todo not found")
+	return err
 }

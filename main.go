@@ -2,8 +2,10 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
+
 	"github.com/PhilAldridge/TODO-GO/router"
 	"github.com/PhilAldridge/TODO-GO/store"
 )
@@ -30,7 +32,7 @@ func main() {
 		log.Fatal("valid modes: json, mem")
 	}
 
-
+	fmt.Println("Server listening on :8080")
 	mux := http.NewServeMux()
 	api:= router.NewApiHandler(todoStore)
 
