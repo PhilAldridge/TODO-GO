@@ -10,7 +10,7 @@ import (
 )
 
 func ReadJson() []models.Todo {
-	file, err:= os.Open("todoStore.json")
+	file, err:= os.Open(JsonFile)
 
 	if err != nil {
 		log.Fatal(err)
@@ -31,5 +31,5 @@ func ReadJson() []models.Todo {
 
 func WriteJson(data []models.Todo) {
 	jsonString,_:= json.Marshal(data)
-	os.WriteFile("todoStore.json",jsonString,os.ModePerm) 
+	os.WriteFile(JsonFile,jsonString,os.ModePerm) 
 }

@@ -1,22 +1,57 @@
 package main
 
-// import (
-// 	"bytes"
-// 	"strings"
-// 	"testing"
-// )
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"strconv"
+	"testing"
 
-// func TestTodoCli(t *testing.T) {
-// 	t.Run("Should exit the app when 'exit' command recieved", func(t *testing.T) {
-// 		reader := strings.NewReader("exit\n")
-// 		writer := &bytes.Buffer{}
+	"github.com/PhilAldridge/TODO-GO/lib"
+	"github.com/PhilAldridge/TODO-GO/router"
+	"github.com/PhilAldridge/TODO-GO/store"
+)
 
-// 		todoCli(reader, writer)
+func TestMain(m *testing.M) {
+	lib.LoadConfig(".env.test")
+	os.Exit(m.Run())
+}
 
-// 		got := writer.String()
-// 		wantSuffix := "Exiting App\n"
-// 		if !strings.HasSuffix(got, wantSuffix) {
-// 			t.Errorf("todoCli() output did not end with %q, got %q", wantSuffix, got)
-// 		}
-// 	})
-// }
+func TestConcurrentPutAndGet(t *testing.T) {
+	server := http.NewServeMux()
+	store:= &store.JSONStore{}
+	api:= router.NewApiHandler(store)
+	server.Handle("/Todos/", &api)
+	server.Handle("/Todos", &api)
+
+	for i := 0; i < 10; i++ {
+		t.Run("ParallelTest", func(t *testing.T) {
+			t.Parallel()
+
+			payload := router.PutBody{
+				Label: "test"+strconv.Itoa(i),
+				Deadline: "2025-01-01",
+			}
+			b, _ := json.Marshal(payload)
+
+			req := httptest.NewRequest(http.MethodPut, "/Todos", bytes.NewBuffer(b))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			server.ServeHTTP(w, req)
+
+			if w.Code != http.StatusOK {
+				t.Errorf("PUT: unexpected status: %d", w.Code)
+			}
+
+			req = httptest.NewRequest(http.MethodGet, "/Todos", nil)
+			w = httptest.NewRecorder()
+			server.ServeHTTP(w, req)
+
+			if w.Code != http.StatusOK {
+				t.Errorf("GET: unexpected status: %d", w.Code)
+			}
+		})
+	}
+}

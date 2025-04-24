@@ -1,6 +1,7 @@
 package router
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -33,20 +34,23 @@ func (h *ApiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ApiHandler) handlePut(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	label:= r.Form.Get("label")
-	deadlineString:= r.Form.Get("deadline")
-	deadline,err:= time.Parse("2006-01-02",deadlineString)
-	if label =="" || err!=nil {
+	var body PutBody
+	err:= json.NewDecoder(r.Body).Decode(&body)
+	if body.Label =="" || err!=nil {
 		http.Error(w,"Put must include a todo label and a deadline (in the form 2006-01-02)",http.StatusBadRequest)
 		return
 	}
-	todoId, err:= h.store.AddTodo(label,deadline)
-	if err != nil {
-		http.Error(w,fmt.Sprintf(`{"error": "%s"}`, err),2)//TODO
+	r.ParseForm()
+	deadline,err:= time.Parse("2006-01-02",body.Deadline)
+	if err!=nil {
+		http.Error(w,"Put must include a todo label and a deadline (in the form 2006-01-02)",http.StatusBadRequest)
 		return
 	}
-	//marshalAndWrite(w,todoId)
+	todoId, err:= h.store.AddTodo(body.Label,deadline)
+	if err != nil {
+		http.Error(w,fmt.Sprintf(`{"error": "%s"}`, err),http.StatusConflict)//TODO
+		return
+	}
 	w.Write([]byte(todoId.String()))
 }
 
@@ -67,18 +71,20 @@ func (h *ApiHandler) handleGet(w http.ResponseWriter, r *http.Request)    {
 }
 
 func (h *ApiHandler) handlePatch(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	id:= r.Form.Get("id")
-	field:= r.Form.Get("field")
-	updatedValue:= r.Form.Get("value")
+	var body PatchBody
+	err:= json.NewDecoder(r.Body).Decode(&body)
+	if err!=nil {
+		http.Error(w,"Provide Id, Field, Value",http.StatusBadRequest)
+		return
+	}
 	
-	uuid, err := uuid.Parse(id)
-	if id == "" || err != nil {
+	uuid, err := uuid.Parse(body.Id)
+	if body.Id == "" || err != nil {
 		http.Error(w,"Error: patch method requires a valid id",http.StatusBadRequest)
 		return
 	}
 
-	todo,err:= h.store.UpdateTodo(uuid,field, updatedValue)
+	todo,err:= h.store.UpdateTodo(uuid,body.Field, body.Value)
 	if err!=nil {
 		http.Error(w,fmt.Sprintf(`{"error": "%s"}`, err),http.StatusNotFound)//TODO
 	}
@@ -86,11 +92,14 @@ func (h *ApiHandler) handlePatch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ApiHandler) handleDelete(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	id:= r.Form.Get("id")
-
-	uuid, err := uuid.Parse(id)
-	if id == "" || err != nil {
+	var body DeleteBody
+	err:= json.NewDecoder(r.Body).Decode(&body)
+	if err!=nil {
+		http.Error(w,"Provide a valid id",http.StatusBadRequest)
+		return
+	}
+	uuid, err := uuid.Parse(body.Id)
+	if body.Id == "" || err != nil {
 		http.Error(w,"Error: delete method requires a valid id",http.StatusBadRequest)
 		return
 	}

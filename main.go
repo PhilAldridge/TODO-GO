@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/PhilAldridge/TODO-GO/lib"
 	"github.com/PhilAldridge/TODO-GO/logging"
 	"github.com/PhilAldridge/TODO-GO/router"
 	"github.com/PhilAldridge/TODO-GO/store"
@@ -23,6 +24,8 @@ func main() {
 	// 	fmt.Fprintln(os.Stdout, err)
 	// 	os.Exit(1)
 	// }
+	lib.LoadConfig(".env")
+
 	flag.Parse()
 
 	var todoStore store.Store

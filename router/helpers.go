@@ -20,3 +20,18 @@ func marshalAndWrite[T any](w http.ResponseWriter, data T) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
 }
+
+type PutBody struct {
+	Label string
+	Deadline string
+}
+
+type PatchBody struct {
+	Id string
+	Field string
+	Value string
+}
+
+type DeleteBody struct {
+	Id string
+}
