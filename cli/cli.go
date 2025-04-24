@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strconv"
 	"time"
 
 	"github.com/PhilAldridge/TODO-GO/store"
@@ -131,30 +130,11 @@ func updateCmd(output io.Writer) *cobra.Command {
 				fmt.Fprintf(output, "uuid not in correct format: %s", err)
 				return
 			}
-			todo, err := store.GetTodoById(id)
-			if err != nil {
-				fmt.Fprintf(output, "todo not found: %s", err)
-				return
+		
+			todo, err:= store.UpdateTodo(id, args[1], args[2])
+			if err!= nil {
+				fmt.Fprintf(output, err.Error())
 			}
-			switch args[1] {
-			case "Label":
-				todo.Label = args[2]
-			case "Deadline":
-				todo.Deadline, err = time.Parse("2006-01-01", args[2])
-				if err != nil {
-					fmt.Fprintf(output, "time not in correct format: %s", err)
-					return
-				}
-			case "Completed":
-				todo.Completed, err = strconv.ParseBool(args[2])
-				if err != nil {
-					fmt.Fprintf(output, "completed field must be true or false: %s", err)
-					return
-				}
-			default:
-				fmt.Fprintf(output, "You must update a valid field")
-			}
-			store.UpdateTodo(id, todo.Label, todo.Deadline, todo.Completed)
 			fmt.Fprintf(output, "Todo updated:\n%s\nAdded: %s\nCompleted: %t\n\n",
 				todo.Label, todo.Deadline.Format("2006-01-02"), todo.Completed)
 		},

@@ -67,19 +67,22 @@ func (h *ApiHandler) handleGet(w http.ResponseWriter, r *http.Request)    {
 }
 
 func (h *ApiHandler) handlePatch(w http.ResponseWriter, r *http.Request) {
-	// r.ParseForm()
-	// id:= r.Form.Get("id")
-	// label:= r.Form.Get("label")
-	// deadline:= r.Form.Get("deadline")
-	// completed:= r.Form.Get("completed")
+	r.ParseForm()
+	id:= r.Form.Get("id")
+	field:= r.Form.Get("field")
+	updatedValue:= r.Form.Get("value")
 	
-	// uuid, err := uuid.Parse(id)
-	// if id == "" || err != nil {
-	// 	http.Error(w,"Error: patch method requires a valid id",http.StatusBadRequest)
-	// 	return
-	// }
+	uuid, err := uuid.Parse(id)
+	if id == "" || err != nil {
+		http.Error(w,"Error: patch method requires a valid id",http.StatusBadRequest)
+		return
+	}
 
-	//todo,err:= h.store.UpdateTodo(uuid,label,deadline,completed)
+	todo,err:= h.store.UpdateTodo(uuid,field, updatedValue)
+	if err!=nil {
+		http.Error(w,fmt.Sprintf(`{"error": "%s"}`, err),http.StatusNotFound)//TODO
+	}
+	marshalAndWrite(w,todo)
 }
 
 func (h *ApiHandler) handleDelete(w http.ResponseWriter, r *http.Request) {

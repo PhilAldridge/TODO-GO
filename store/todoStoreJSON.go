@@ -2,6 +2,7 @@ package store
 
 import (
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/PhilAldridge/TODO-GO/lib"
@@ -36,16 +37,28 @@ func (t *JSONStore) GetTodos() []models.Todo {
 	return todos
 }
 
-func (t *JSONStore) UpdateTodo(id uuid.UUID, label string, deadline time.Time, completed bool) (models.Todo, error) {
+func (t *JSONStore) UpdateTodo(id uuid.UUID, field string, updatedValue string) (models.Todo, error) {
 	todos := lib.ReadJson()
 
 	for i,todo:= range todos {
 		if todo.Id == id {
-			todos[i] = models.Todo{
-				Id: id,
-				Label: label,
-				Deadline: deadline,
-				Completed: completed,
+			switch field {
+			case "label":
+				todos[i].Label = updatedValue
+			case "deadline":
+				newDeadline, err:= time.Parse("2006-01-01",updatedValue)
+				if err != nil {
+					return models.Todo{},err
+				}
+				todos[i].Deadline = newDeadline
+			case "completed":
+				newCompleted, err:= strconv.ParseBool(updatedValue)
+				if err != nil {
+					return models.Todo{},err
+				}
+				todos[i].Completed = newCompleted
+			default:
+				return models.Todo{}, errors.New("allowed update fields: label, deadline, completed")
 			}
 			lib.WriteJson(todos)
 			return todos[i],nil

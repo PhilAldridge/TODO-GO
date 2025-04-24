@@ -2,6 +2,7 @@ package store
 
 import (
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/PhilAldridge/TODO-GO/models"
@@ -34,14 +35,26 @@ func (t *InMemoryStore) GetTodos() []models.Todo {
 	return t.todos
 }
 
-func (t *InMemoryStore) UpdateTodo(id uuid.UUID, label string, deadline time.Time, completed bool) (models.Todo, error) {
+func (t *InMemoryStore) UpdateTodo(id uuid.UUID, field string, updatedValue string) (models.Todo, error) {
 	for i, todo := range t.todos {
 		if todo.Id == id {
-			t.todos[i] = models.Todo{
-				Id:        id,
-				Label:     label,
-				Deadline:  deadline,
-				Completed: completed,
+			switch field {
+			case "label":
+				t.todos[i].Label = updatedValue
+			case "deadline":
+				newDeadline, err:= time.Parse("2006-01-01",updatedValue)
+				if err != nil {
+					return models.Todo{},err
+				}
+				t.todos[i].Deadline = newDeadline
+			case "completed":
+				newCompleted, err:= strconv.ParseBool(updatedValue)
+				if err != nil {
+					return models.Todo{},err
+				}
+				t.todos[i].Completed = newCompleted
+			default:
+				return models.Todo{}, errors.New("allowed update fields: label, deadline, completed")
 			}
 			return t.todos[i], nil
 		}

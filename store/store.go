@@ -16,9 +16,8 @@ type Store interface {
 	) (uuid.UUID, error)
 	UpdateTodo(
 		id uuid.UUID,
-		label string,
-		deadline time.Time,
-		completed bool,
+		field string,
+		updatedValue string,
 	) (models.Todo, error)
 	DeleteTodo(id uuid.UUID) error
 }
