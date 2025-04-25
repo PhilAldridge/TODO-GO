@@ -21,8 +21,8 @@ func TestMain(m *testing.M) {
 
 func TestConcurrentPutAndGet(t *testing.T) {
 	server := http.NewServeMux()
-	store:= &store.JSONStore{}
-	api:= router.NewApiHandler(store)
+	store := &store.JSONStore{}
+	api := router.NewV1ApiHandler(store)
 	server.Handle("/Todos/", &api)
 	server.Handle("/Todos", &api)
 
@@ -30,8 +30,8 @@ func TestConcurrentPutAndGet(t *testing.T) {
 		t.Run("ParallelTest", func(t *testing.T) {
 			t.Parallel()
 
-			payload := router.PutBody{
-				Label: "test"+strconv.Itoa(i),
+			payload := router.V1PutBody{
+				Label:    "test" + strconv.Itoa(i),
 				Deadline: "2025-01-01",
 			}
 			b, _ := json.Marshal(payload)

@@ -3,6 +3,8 @@ package router
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/PhilAldridge/TODO-GO/store"
 )
 
 func internalServerErrorHandler(w http.ResponseWriter) {
@@ -21,17 +23,26 @@ func marshalAndWrite[T any](w http.ResponseWriter, data T) {
 	w.Write(resp)
 }
 
-type PutBody struct {
-	Label string
+type V1PutBody struct {
+	Label    string
 	Deadline string
 }
 
-type PatchBody struct {
-	Id string
+type V1PatchBody struct {
+	Id    string
 	Field string
 	Value string
 }
 
-type DeleteBody struct {
+type V1DeleteBody struct {
 	Id string
+}
+
+type TodoApiHandler struct {
+	store store.Store
+}
+
+type UserPutBody struct {
+	Username string
+	Password string
 }

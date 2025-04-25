@@ -9,8 +9,8 @@ import (
 	"github.com/PhilAldridge/TODO-GO/models"
 )
 
-func ReadJson() []models.Todo {
-	file, err:= os.Open(JsonFile)
+func ReadJsonStore() []models.Todo {
+	file, err := os.Open(JsonStoreFile)
 
 	if err != nil {
 		log.Fatal(err)
@@ -18,7 +18,7 @@ func ReadJson() []models.Todo {
 	defer file.Close()
 
 	var todos []models.Todo
-	byteValue,err:= io.ReadAll(file)
+	byteValue, err := io.ReadAll(file)
 
 	if err != nil {
 		log.Fatal(err)
@@ -29,7 +29,32 @@ func ReadJson() []models.Todo {
 	return todos
 }
 
-func WriteJson(data []models.Todo) {
-	jsonString,_:= json.Marshal(data)
-	os.WriteFile(JsonFile,jsonString,os.ModePerm) 
+func WriteJsonStore(data []models.Todo) {
+	jsonString, _ := json.Marshal(data)
+	os.WriteFile(JsonStoreFile, jsonString, os.ModePerm)
+}
+
+func ReadJsonUsers() []models.User {
+	file, err := os.Open(JsonUsersFile)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	var users []models.User
+	byteValue, err := io.ReadAll(file)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	json.Unmarshal(byteValue, &users)
+
+	return users
+}
+
+func WriteUserStore(data []models.User) {
+	jsonString, _ := json.Marshal(data)
+	os.WriteFile(JsonUsersFile, jsonString, os.ModePerm)
 }

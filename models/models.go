@@ -14,3 +14,9 @@ type Todo struct {
 	Deadline  time.Time	`json:"Deadline"`
 }
 
+type User struct {
+	Id				uuid.UUID	`json:"Id"`
+	Username		string		`json:"Username"`
+	PasswordHash	[]byte		`json:"PasswordHash"`
+}
+

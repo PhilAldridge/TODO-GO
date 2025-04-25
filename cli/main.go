@@ -18,7 +18,7 @@ var url string
 
 func main() {
 	lib.LoadConfig("../.env")
-	url = fmt.Sprintf("http://localhost%s/Todos",lib.PortNo)
+	url = fmt.Sprintf("http://localhost%s/Todos", lib.PortNo)
 	cmd := NewCmd(os.Stdout)
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stdout, err)
@@ -26,19 +26,19 @@ func main() {
 	}
 }
 
-func NewCmd(output io.Writer ) *cobra.Command {
+func NewCmd(output io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "todo",
 		Short: "A CLI todo app",
 	}
-	cmd.PersistentFlags().String("storage","mem","Choose how the todos will be stored")
+	cmd.PersistentFlags().String("storage", "mem", "Choose how the todos will be stored")
 	cmd.AddCommand(
-		addCmd(output), 
+		addCmd(output),
 		listCmd(output),
-		getCmd(output), 
+		getCmd(output),
 		updateCmd(output),
 		deleteCmd(output),
-		)
+	)
 	return cmd
 }
 
@@ -49,16 +49,16 @@ func addCmd(output io.Writer) *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 
 		Run: func(cmd *cobra.Command, args []string) {
-			body,err:= json.Marshal(router.PutBody{
-				Label: args[0],
+			body, err := json.Marshal(router.V1PutBody{
+				Label:    args[0],
 				Deadline: args[1],
 			})
 
-			if err!= nil {
+			if err != nil {
 				fmt.Println("Error: add needs two arguments, label and deadline")
 				return
 			}
-			sendAndReceive(http.MethodPut,body)
+			sendAndReceive(http.MethodPut, body)
 		},
 	}
 }
@@ -68,17 +68,17 @@ func listCmd(output io.Writer) *cobra.Command {
 		Use:   "list",
 		Short: "List all added todos",
 		Run: func(cmd *cobra.Command, args []string) {
-			res,err:= http.Get(url)
-			if err!= nil {
+			res, err := http.Get(url)
+			if err != nil {
 				fmt.Printf("error making http request: %s\n", err)
-  				return
+				return
 			}
 			var todos []models.Todo
 
 			err = json.NewDecoder(res.Body).Decode(&todos)
-			if err!=nil {
+			if err != nil {
 				fmt.Printf("error making http request: %s\n", err)
-  				return
+				return
 			}
 			for _, v := range todos {
 				fmt.Fprintf(output, "%s\nAdded: %s\nCompleted: %t\n\n",
@@ -93,17 +93,17 @@ func getCmd(output io.Writer) *cobra.Command {
 		Use:   "get [id]",
 		Short: "Get a todo by its id",
 		Run: func(cmd *cobra.Command, args []string) {
-			res,err:= http.Get(fmt.Sprintf("%s?id=%s",url,args[0]))
-			if err!= nil {
+			res, err := http.Get(fmt.Sprintf("%s?id=%s", url, args[0]))
+			if err != nil {
 				fmt.Printf("error making http request: %s\n", err)
-  				return
+				return
 			}
 			var todo models.Todo
 
 			err = json.NewDecoder(res.Body).Decode(&todo)
-			if err!=nil {
+			if err != nil {
 				fmt.Printf("error making http request: %s\n", err)
-  				return
+				return
 			}
 			fmt.Fprintf(output, "%s\nAdded: %s\nCompleted: %t\n\n",
 				todo.Label, todo.Deadline.Format("2006-01-02"), todo.Completed)
@@ -117,18 +117,18 @@ func updateCmd(output io.Writer) *cobra.Command {
 		Short: "Update a todo",
 		Args:  cobra.ExactArgs(3),
 		Run: func(cmd *cobra.Command, args []string) {
-			body,err:= json.Marshal(router.PatchBody{
-				Id: args[0],
+			body, err := json.Marshal(router.V1PatchBody{
+				Id:    args[0],
 				Field: args[1],
 				Value: args[2],
 			})
 
-			if err!= nil {
+			if err != nil {
 				fmt.Println("Error: update needs three arguments, id, field and value")
 				return
 			}
 
-			sendAndReceive(http.MethodPatch,body)
+			sendAndReceive(http.MethodPatch, body)
 		},
 	}
 }
@@ -138,29 +138,29 @@ func deleteCmd(output io.Writer) *cobra.Command {
 		Use:   "delete [id]",
 		Short: "Delete a todo by its id",
 		Run: func(cmd *cobra.Command, args []string) {
-			body,err:= json.Marshal(router.DeleteBody{
+			body, err := json.Marshal(router.V1DeleteBody{
 				Id: args[0],
 			})
 
-			if err!= nil {
+			if err != nil {
 				fmt.Println("Error: delete needs one argument, id")
 				return
 			}
-			sendAndReceive(http.MethodDelete,body)
+			sendAndReceive(http.MethodDelete, body)
 		},
 	}
 }
 
 func sendAndReceive(method string, body []byte) {
-	req,err:= http.NewRequest(method,url,bytes.NewBuffer(body))
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(body))
 	if err != nil {
 		fmt.Printf("client: could not create request: %s\n", err)
 		return
-	   }
+	}
 
 	res, err := http.DefaultClient.Do(req)
-	 if err != nil {
-		  fmt.Printf("client: error making http request: %s\n", err)
+	if err != nil {
+		fmt.Printf("client: error making http request: %s\n", err)
 		return
 	}
 
