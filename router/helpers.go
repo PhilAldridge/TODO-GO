@@ -2,9 +2,13 @@ package router
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"time"
 
-	"github.com/PhilAldridge/TODO-GO/store"
+	"github.com/PhilAldridge/TODO-GO/lib"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 func internalServerErrorHandler(w http.ResponseWriter) {
@@ -23,26 +27,34 @@ func marshalAndWrite[T any](w http.ResponseWriter, data T) {
 	w.Write(resp)
 }
 
-type V1PutBody struct {
-	Label    string
-	Deadline string
+func createToken(username string, id uuid.UUID) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
+		jwt.MapClaims{
+			"username": username,
+			"id":       id.String(),
+			"exp":      time.Now().Add(time.Hour * 24).Unix(),
+		})
+
+	tokenString, err := token.SignedString(lib.JwtKey)
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
 }
 
-type V1PatchBody struct {
-	Id    string
-	Field string
-	Value string
-}
-
-type V1DeleteBody struct {
-	Id string
-}
-
-type TodoApiHandler struct {
-	store store.Store
-}
-
-type UserPutBody struct {
-	Username string
-	Password string
-}
+func verifyToken(tokenString string) error {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	   return lib.JwtKey, nil
+	})
+   
+	if err != nil {
+	   return err
+	}
+   
+	if !token.Valid {
+	   return fmt.Errorf("invalid token")
+	}
+   
+	return nil
+ }

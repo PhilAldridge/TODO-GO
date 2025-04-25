@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/PhilAldridge/TODO-GO/auth"
 	"github.com/PhilAldridge/TODO-GO/lib"
 	"github.com/PhilAldridge/TODO-GO/logging"
 	"github.com/PhilAldridge/TODO-GO/router"
@@ -44,12 +45,15 @@ func main() {
 	fmt.Println("Server listening on :8080")
 	mux := http.NewServeMux()
 	v1api := router.NewV1ApiHandler(todoStore)
-	usersapi:= router.NewUserApiHandler(usersStore)
+	usersapi := router.NewUserApiHandler(usersStore)
+	v2api := router.NewV2ApiHandler(todoStore)
 
 	mux.Handle("/Todos/", &v1api)
 	mux.Handle("/Todos", &v1api)
 	mux.Handle("/Users/", &usersapi)
-	mux.Handle("/Users",&usersapi)
+	mux.Handle("/Users", &usersapi)
+	mux.Handle("/TodosV2/", auth.JWTMiddleware(&v2api))
+	mux.Handle("/TodosV2", auth.JWTMiddleware(&v2api))
 	wrapped := logging.WithTraceIDAndLogger(
 		logging.LoggingMiddleware(mux),
 	)

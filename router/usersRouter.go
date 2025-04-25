@@ -4,12 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
-
-	"github.com/PhilAldridge/TODO-GO/lib"
+	
 	"github.com/PhilAldridge/TODO-GO/users"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 )
 
 type UserApiHandler struct {
@@ -74,18 +71,4 @@ func (h *UserApiHandler) handlePost(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func createToken(username string, id uuid.UUID) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
-		jwt.MapClaims{
-			"username": username,
-			"id":       id.String(),
-			"exp":      time.Now().Add(time.Hour * 24).Unix(),
-		})
 
-	tokenString, err := token.SignedString(lib.JwtKey)
-	if err != nil {
-		return "", err
-	}
-
-	return tokenString, nil
-}
