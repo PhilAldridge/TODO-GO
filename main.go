@@ -19,11 +19,7 @@ var (
 )
 
 func main() {
-	// cmd := cli.NewCmd(os.Stdout)
-	// if err := cmd.Execute(); err != nil {
-	// 	fmt.Fprintln(os.Stdout, err)
-	// 	os.Exit(1)
-	// }
+	
 	lib.LoadConfig(".env")
 
 	flag.Parse()
@@ -51,5 +47,5 @@ func main() {
 		logging.LoggingMiddleware(mux),
 	)
 
-    http.ListenAndServe(":8080", wrapped)
+    http.ListenAndServe(lib.PortNo, wrapped)
 }

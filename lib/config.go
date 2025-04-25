@@ -8,7 +8,10 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var JsonFile string
+var (
+	JsonFile string
+	PortNo string
+)
 
 func LoadConfig(envFile string) {
 	err := godotenv.Load(envFile)
@@ -19,5 +22,10 @@ func LoadConfig(envFile string) {
 	JsonFile = os.Getenv("json_filename")
 	if JsonFile == "" {
 		log.Fatal("json_filename is not set in the environment")
+	}
+
+	PortNo = os.Getenv("port_number")
+	if PortNo == "" {
+		log.Fatal("port_number is not set in the environment")
 	}
 }
