@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,11 +15,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var url string
+var (
+	url string
+	username string 
+	password string 
+	jwt string
+)
 
 func main() {
 	lib.LoadConfig("../.env")
-	url = fmt.Sprintf("http://localhost%s/Todos", lib.PortNo)
+	//flag.Parse()
+
+
+	
+
+
+
 	cmd := NewCmd(os.Stdout)
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stdout, err)
@@ -31,7 +43,8 @@ func NewCmd(output io.Writer) *cobra.Command {
 		Use:   "todo",
 		Short: "A CLI todo app",
 	}
-	cmd.PersistentFlags().String("storage", "mem", "Choose how the todos will be stored")
+	cmd.PersistentFlags().String("username", "", "Set user for v2 api usage")
+	cmd.PersistentFlags().String("password","","Set password for v2 api usage")
 	cmd.AddCommand(
 		addCmd(output),
 		listCmd(output),
@@ -58,7 +71,10 @@ func addCmd(output io.Writer) *cobra.Command {
 				fmt.Println("Error: add needs two arguments, label and deadline")
 				return
 			}
-			sendAndReceive(http.MethodPut, body)
+			res:= sendAndReceive(http.MethodPut, body,url)
+			if len(res) >0 {
+				fmt.Printf("client: response body: %s\n", res)
+			}
 		},
 	}
 }
@@ -68,6 +84,10 @@ func listCmd(output io.Writer) *cobra.Command {
 		Use:   "list",
 		Short: "List all added todos",
 		Run: func(cmd *cobra.Command, args []string) {
+			if err:= login(cmd); err!= nil {
+				fmt.Println(err.Error())
+				return
+			}
 			res, err := http.Get(url)
 			if err != nil {
 				fmt.Printf("error making http request: %s\n", err)
@@ -128,7 +148,10 @@ func updateCmd(output io.Writer) *cobra.Command {
 				return
 			}
 
-			sendAndReceive(http.MethodPatch, body)
+			res:= sendAndReceive(http.MethodPatch, body,url)
+			if len(res) >0 {
+				fmt.Printf("client: response body: %s\n", res)
+			}
 		},
 	}
 }
@@ -146,28 +169,58 @@ func deleteCmd(output io.Writer) *cobra.Command {
 				fmt.Println("Error: delete needs one argument, id")
 				return
 			}
-			sendAndReceive(http.MethodDelete, body)
+			res:=sendAndReceive(http.MethodDelete, body,url)
+			if len(res) >0 {
+				fmt.Printf("client: response body: %s\n", res)
+			}
 		},
 	}
 }
 
-func sendAndReceive(method string, body []byte) {
-	req, err := http.NewRequest(method, url, bytes.NewBuffer(body))
+func sendAndReceive(method string, body []byte, urlString string) []byte {
+	req, err := http.NewRequest(method, urlString, bytes.NewBuffer(body))
 	if err != nil {
 		fmt.Printf("client: could not create request: %s\n", err)
-		return
+		return []byte{}
 	}
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Printf("client: error making http request: %s\n", err)
-		return
+		return []byte{}
 	}
 
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		fmt.Printf("client: could not read response body: %s\n", err)
-		return
+		return []byte{}
 	}
-	fmt.Printf("client: response body: %s\n", resBody)
+
+	if res.StatusCode == http.StatusOK {
+		return resBody
+	}
+	return []byte{}
+}
+
+func login(cmd *cobra.Command) error {
+	username,_ = cmd.Flags().GetString("username")
+	password,_ = cmd.Flags().GetString("password")
+	fmt.Printf("username: %s, password: %s\n",username,password)
+	if username != "" {
+		url = fmt.Sprintf("http://localhost%s/TodosV2", lib.PortNo)
+		body,_ := json.Marshal(router.UserPutBody{
+			Username: username,
+			Password: password,
+		})
+
+		res:= sendAndReceive(http.MethodPost,body, "http://localhost:8080/Users") //TODO
+		if len(res) >0 {
+			jwt= string(res)
+		} else {
+			return errors.New("could not log in")
+		}
+	} else {
+		url = fmt.Sprintf("http://localhost%s/Todos", lib.PortNo)
+	}
+	return nil
 }
