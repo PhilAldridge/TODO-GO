@@ -19,7 +19,7 @@ var (
 	username string 
 	password string 
 	jwt string
-	cmd *cobra.Command = NewCmd(os.Stdout)
+	cmd *cobra.Command = NewCmd()
 )
 
 func main() {
@@ -32,7 +32,7 @@ func main() {
 	}
 }
 
-func NewCmd(output io.Writer) *cobra.Command {
+func NewCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "todo",
 		Short: "A CLI todo app",
@@ -40,16 +40,16 @@ func NewCmd(output io.Writer) *cobra.Command {
 	cmd.PersistentFlags().StringVar(&username,"username", "", "Set user for v2 api usage")
 	cmd.PersistentFlags().StringVar(&password,"password","","Set password for v2 api usage")
 	cmd.AddCommand(
-		addCmd(output),
-		listCmd(output),
-		getCmd(output),
-		updateCmd(output),
-		deleteCmd(output),
+		addCmd(),
+		listCmd(),
+		getCmd(),
+		updateCmd(),
+		deleteCmd(),
 	)
 	return cmd
 }
 
-func addCmd(output io.Writer) *cobra.Command {
+func addCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "add [task]",
 		Short: "Add a new todo",
@@ -73,7 +73,7 @@ func addCmd(output io.Writer) *cobra.Command {
 	}
 }
 
-func listCmd(output io.Writer) *cobra.Command {
+func listCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",
 		Short: "List all added todos",
@@ -88,14 +88,14 @@ func listCmd(output io.Writer) *cobra.Command {
 				return
 			}
 			for _, v := range todos {
-				fmt.Fprintf(output, "%s\nAdded: %s\nCompleted: %t\n\n",
+				fmt.Printf("%s\nAdded: %s\nCompleted: %t\n\n",
 					v.Label, v.Deadline.Format("2006-01-02"), v.Completed)
 			}
 		},
 	}
 }
 
-func getCmd(output io.Writer) *cobra.Command {
+func getCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "get [id]",
 		Short: "Get a todo by its id",
@@ -108,13 +108,13 @@ func getCmd(output io.Writer) *cobra.Command {
 				fmt.Printf("error making http request: %s\n", err)
 				return
 			}
-			fmt.Fprintf(output, "%s\nAdded: %s\nCompleted: %t\n\n",
+			fmt.Printf("%s\nAdded: %s\nCompleted: %t\n\n",
 				todo.Label, todo.Deadline.Format("2006-01-02"), todo.Completed)
 		},
 	}
 }
 
-func updateCmd(output io.Writer) *cobra.Command {
+func updateCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "update [id] [key] [value]",
 		Short: "Update a todo",
@@ -139,7 +139,7 @@ func updateCmd(output io.Writer) *cobra.Command {
 	}
 }
 
-func deleteCmd(output io.Writer) *cobra.Command {
+func deleteCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "delete [id]",
 		Short: "Delete a todo by its id",
