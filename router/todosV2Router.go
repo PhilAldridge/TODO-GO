@@ -15,6 +15,8 @@ func NewV2ApiHandler(store store.Store) TodoApiHandlerV2 {
 }
 
 func (h *TodoApiHandlerV2) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.username = r.Context().Value("username").(string)
+
 	switch {
 	case r.Method == http.MethodPut:
 		h.handlePut(w, r)
@@ -41,7 +43,7 @@ func (h *TodoApiHandlerV2) handlePut(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Put must include a todo label and a deadline (in the form 2006-01-02)", http.StatusBadRequest)
 		return
 	}
-	todoId, err := h.store.AddTodo(body.Label, deadline)
+	todoId, err := h.store.AddTodo(body.Label, deadline,h.username)
 	if err != nil {
 		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), http.StatusConflict) //TODO
 		return
@@ -53,11 +55,11 @@ func (h *TodoApiHandlerV2) handleGet(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	uuid, err := uuid.Parse(id)
 	if id == "" || err != nil {
-		todos := h.store.GetTodos()
+		todos := h.store.GetTodos(h.username)
 		marshalAndWrite(w, todos)
 		return
 	}
-	todo, err := h.store.GetTodoById(uuid)
+	todo, err := h.store.GetTodoById(uuid, h.username)
 	if err != nil {
 		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), 2) //TODO
 		return
@@ -79,7 +81,7 @@ func (h *TodoApiHandlerV2) handlePatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todo, err := h.store.UpdateTodo(uuid, body.Field, body.Value)
+	todo, err := h.store.UpdateTodo(uuid, body.Field, body.Value, h.username)
 	if err != nil {
 		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), http.StatusNotFound) //TODO
 	}
@@ -99,7 +101,7 @@ func (h *TodoApiHandlerV2) handleDelete(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	err = h.store.DeleteTodo(uuid)
+	err = h.store.DeleteTodo(uuid, h.username)
 	if err != nil {
 		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), http.StatusNotFound) //TODO
 		return

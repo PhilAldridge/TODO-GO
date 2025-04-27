@@ -8,16 +8,18 @@ import (
 )
 
 type Store interface {
-	GetTodos() []models.Todo
-	GetTodoById(id uuid.UUID) (models.Todo, error)
+	GetTodos(username string) []models.Todo
+	GetTodoById(id uuid.UUID, username string) (models.Todo, error)
 	AddTodo(
 		label string,
 		deadline time.Time,
+		username string,
 	) (uuid.UUID, error)
 	UpdateTodo(
 		id uuid.UUID,
 		field string,
 		updatedValue string,
+		username string,
 	) (models.Todo, error)
-	DeleteTodo(id uuid.UUID) error
+	DeleteTodo(id uuid.UUID, username string) error
 }

@@ -23,6 +23,7 @@ type TodoApiHandler struct {
 
 type TodoApiHandlerV2 struct {
 	store store.Store
+	username string
 }
 
 type UserPutBody struct {

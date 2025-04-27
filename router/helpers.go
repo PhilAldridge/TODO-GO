@@ -2,7 +2,6 @@ package router
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -42,19 +41,3 @@ func createToken(username string, id uuid.UUID) (string, error) {
 
 	return tokenString, nil
 }
-
-func verifyToken(tokenString string) error {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-	   return lib.JwtKey, nil
-	})
-   
-	if err != nil {
-	   return err
-	}
-   
-	if !token.Valid {
-	   return fmt.Errorf("invalid token")
-	}
-   
-	return nil
- }

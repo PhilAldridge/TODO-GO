@@ -32,12 +32,12 @@ func JWTMiddleware(next http.Handler) http.Handler {
 		}
 		claims := token.Claims.(jwt.MapClaims)
 		username := claims["username"].(string)
-		userid:= claims["id"].(string)
+		//userid:= claims["id"].(string)
 
 		ctx := context.WithValue(r.Context(), "username", username)
-		ctx = context.WithValue(ctx,"userid",userid)
+		//ctx = context.WithValue(ctx,"userid",userid)
 
 		// Token is valid — continue
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

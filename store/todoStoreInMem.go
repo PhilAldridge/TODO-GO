@@ -26,7 +26,7 @@ func LoadInMemoryTodoStore(todos []models.Todo) *InMemoryStore {
 	return &s
 }
 
-func (t *InMemoryStore) AddTodo(label string, deadline time.Time) (uuid.UUID, error) {
+func (t *InMemoryStore) AddTodo(label string, deadline time.Time, username string) (uuid.UUID, error) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 
@@ -37,23 +37,36 @@ func (t *InMemoryStore) AddTodo(label string, deadline time.Time) (uuid.UUID, er
 		Label:     label,
 		Completed: false,
 		Deadline:  deadline,
+		AuthorUsername: username,
 	})
 	return newUuid, nil
 }
 
-func (t *InMemoryStore) GetTodos() []models.Todo {
+func (t *InMemoryStore) GetTodos(username string) []models.Todo {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
+	usersTodos:= []models.Todo{}
+	for _,todo:= range t.todos {
+		if todo.AuthorUsername == username {
+			usersTodos = append(usersTodos, todo)
+		}
+	}
 
+	return usersTodos
+}
+
+func (t *InMemoryStore) GetAllTodos() []models.Todo {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
 	return t.todos
 }
 
-func (t *InMemoryStore) UpdateTodo(id uuid.UUID, field string, updatedValue string) (models.Todo, error) {
+func (t *InMemoryStore) UpdateTodo(id uuid.UUID, field string, updatedValue string, username string) (models.Todo, error) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 
 	for i, todo := range t.todos {
-		if todo.Id == id {
+		if todo.Id == id && todo.AuthorUsername == username {
 			switch field {
 			case "label":
 				t.todos[i].Label = updatedValue
@@ -78,24 +91,24 @@ func (t *InMemoryStore) UpdateTodo(id uuid.UUID, field string, updatedValue stri
 	return models.Todo{}, errors.New("todo not found")
 }
 
-func (t *InMemoryStore) GetTodoById(id uuid.UUID) (models.Todo, error) {
+func (t *InMemoryStore) GetTodoById(id uuid.UUID, username string) (models.Todo, error) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 
 	for _, todo := range t.todos {
-		if todo.Id == id {
+		if todo.Id == id && todo.AuthorUsername == username {
 			return todo, nil
 		}
 	}
 	return models.Todo{}, errors.New("todo not found")
 }
 
-func (t *InMemoryStore) DeleteTodo(id uuid.UUID) error {
+func (t *InMemoryStore) DeleteTodo(id uuid.UUID, username string) error {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 	
 	for i, todo := range t.todos {
-		if todo.Id == id {
+		if todo.Id == id && todo.AuthorUsername == username {
 			t.todos = append(t.todos[:i], t.todos[i+1:]...)
 			return nil
 		}
