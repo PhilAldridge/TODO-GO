@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,18 +19,13 @@ var (
 	username string 
 	password string 
 	jwt string
+	cmd *cobra.Command = NewCmd(os.Stdout)
 )
 
 func main() {
 	lib.LoadConfig("../.env")
-	//flag.Parse()
+	cobra.OnInitialize(login)
 
-
-	
-
-
-
-	cmd := NewCmd(os.Stdout)
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stdout, err)
 		os.Exit(1)
@@ -43,8 +37,8 @@ func NewCmd(output io.Writer) *cobra.Command {
 		Use:   "todo",
 		Short: "A CLI todo app",
 	}
-	cmd.PersistentFlags().String("username", "", "Set user for v2 api usage")
-	cmd.PersistentFlags().String("password","","Set password for v2 api usage")
+	cmd.PersistentFlags().StringVar(&username,"username", "", "Set user for v2 api usage")
+	cmd.PersistentFlags().StringVar(&password,"password","","Set password for v2 api usage")
 	cmd.AddCommand(
 		addCmd(output),
 		listCmd(output),
@@ -84,18 +78,11 @@ func listCmd(output io.Writer) *cobra.Command {
 		Use:   "list",
 		Short: "List all added todos",
 		Run: func(cmd *cobra.Command, args []string) {
-			if err:= login(cmd); err!= nil {
-				fmt.Println(err.Error())
-				return
-			}
-			res, err := http.Get(url)
-			if err != nil {
-				fmt.Printf("error making http request: %s\n", err)
-				return
-			}
+			res:= sendAndReceive(http.MethodGet,[]byte{},url)
+
 			var todos []models.Todo
 
-			err = json.NewDecoder(res.Body).Decode(&todos)
+			err:= json.Unmarshal(res,&todos)
 			if err != nil {
 				fmt.Printf("error making http request: %s\n", err)
 				return
@@ -113,14 +100,10 @@ func getCmd(output io.Writer) *cobra.Command {
 		Use:   "get [id]",
 		Short: "Get a todo by its id",
 		Run: func(cmd *cobra.Command, args []string) {
-			res, err := http.Get(fmt.Sprintf("%s?id=%s", url, args[0]))
-			if err != nil {
-				fmt.Printf("error making http request: %s\n", err)
-				return
-			}
+			res:= sendAndReceive(http.MethodGet,[]byte{},url+"?id="+args[0])
 			var todo models.Todo
 
-			err = json.NewDecoder(res.Body).Decode(&todo)
+			err := json.Unmarshal(res,&todo)
 			if err != nil {
 				fmt.Printf("error making http request: %s\n", err)
 				return
@@ -184,6 +167,8 @@ func sendAndReceive(method string, body []byte, urlString string) []byte {
 		return []byte{}
 	}
 
+	req.Header.Set("Authorization","Bearer "+jwt)
+
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Printf("client: error making http request: %s\n", err)
@@ -202,9 +187,7 @@ func sendAndReceive(method string, body []byte, urlString string) []byte {
 	return []byte{}
 }
 
-func login(cmd *cobra.Command) error {
-	username,_ = cmd.Flags().GetString("username")
-	password,_ = cmd.Flags().GetString("password")
+func login() {
 	fmt.Printf("username: %s, password: %s\n",username,password)
 	if username != "" {
 		url = fmt.Sprintf("http://localhost%s/TodosV2", lib.PortNo)
@@ -217,10 +200,10 @@ func login(cmd *cobra.Command) error {
 		if len(res) >0 {
 			jwt= string(res)
 		} else {
-			return errors.New("could not log in")
+			fmt.Println("Login failed")
+			os.Exit(1) 
 		}
 	} else {
 		url = fmt.Sprintf("http://localhost%s/Todos", lib.PortNo)
 	}
-	return nil
 }
