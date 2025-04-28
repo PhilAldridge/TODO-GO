@@ -25,7 +25,7 @@ func (h *TodoApiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case r.Method == http.MethodDelete:
 		h.handleDelete(w, r)
 	default:
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		http.Error(w, "Invalid request", http.StatusMethodNotAllowed)
 	}
 }
 
@@ -43,7 +43,7 @@ func (h *TodoApiHandler) handlePut(w http.ResponseWriter, r *http.Request) {
 	}
 	todoId, err := h.store.AddTodo(body.Label, deadline, "")
 	if err != nil {
-		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), http.StatusConflict) //TODO
+		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), http.StatusInternalServerError)
 		return
 	}
 	w.Write([]byte(todoId.String()))
@@ -59,7 +59,7 @@ func (h *TodoApiHandler) handleGet(w http.ResponseWriter, r *http.Request) {
 	}
 	todo, err := h.store.GetTodoById(uuid,"")
 	if err != nil {
-		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), 2) //TODO
+		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), http.StatusNotFound)
 		return
 	}
 	marshalAndWrite(w, todo)
@@ -81,7 +81,7 @@ func (h *TodoApiHandler) handlePatch(w http.ResponseWriter, r *http.Request) {
 
 	todo, err := h.store.UpdateTodo(uuid, body.Field, body.Value,"")
 	if err != nil {
-		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), http.StatusNotFound) //TODO
+		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), http.StatusNotFound)
 	}
 	marshalAndWrite(w, todo)
 }
@@ -101,7 +101,7 @@ func (h *TodoApiHandler) handleDelete(w http.ResponseWriter, r *http.Request) {
 
 	err = h.store.DeleteTodo(uuid,"")
 	if err != nil {
-		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), http.StatusNotFound) //TODO
+		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), http.StatusNotFound)
 		return
 	}
 	w.Write([]byte("Todo Deleted Successfully"))

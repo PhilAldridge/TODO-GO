@@ -43,7 +43,7 @@ func (h *UserApiHandler) handlePut(w http.ResponseWriter, r *http.Request) {
 	}
 	uuid, err := h.users.CreateUser(body.Username, body.Password)
 	if err != nil {
-		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), http.StatusConflict) //TODO
+		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), http.StatusInternalServerError)
 		return
 	}
 	w.Write([]byte(uuid.String()))

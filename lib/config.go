@@ -12,6 +12,7 @@ var (
 	JsonUsersFile string
 	PortNo        string
 	JwtKey        []byte
+	BaseUrl       string
 )
 
 func LoadConfig(envFile string) {
@@ -38,5 +39,10 @@ func LoadConfig(envFile string) {
 	JwtKey = []byte(os.Getenv("jwt_key"))
 	if len(JwtKey) == 0 {
 		log.Fatal("jwt_key is not set in the environment")
+	}
+
+	BaseUrl = os.Getenv("base_url")
+	if len(BaseUrl) == 0 {
+		log.Fatal("base_url is not set in the environment")
 	}
 }
