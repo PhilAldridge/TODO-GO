@@ -9,6 +9,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+type contextKey string
+
 func JWTMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -17,8 +19,10 @@ func JWTMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
+		//get authorisation token from the header
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
+		//check token
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrSignatureInvalid
@@ -30,12 +34,12 @@ func JWTMiddleware(next http.Handler) http.Handler {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
+
+		//add username from token to context
 		claims := token.Claims.(jwt.MapClaims)
 		username := claims["username"].(string)
-		//userid:= claims["id"].(string)
 
-		ctx := context.WithValue(r.Context(), "username", username)
-		//ctx = context.WithValue(ctx,"userid",userid)
+		ctx := context.WithValue(r.Context(), contextKey("username"), username)
 
 		// Token is valid — continue
 		next.ServeHTTP(w, r.WithContext(ctx))

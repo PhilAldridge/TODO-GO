@@ -22,7 +22,7 @@ func generateTraceID() string {
 
 func WithTraceIDAndLogger(next http.Handler) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        traceID := generateTraceID() // or extract from headers
+        traceID := generateTraceID()
 
         logger := slog.With("traceID", traceID)
         ctx := context.WithValue(r.Context(), traceIDKey, traceID)
