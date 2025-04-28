@@ -6,10 +6,9 @@ import (
 	"strings"
 
 	"github.com/PhilAldridge/TODO-GO/lib"
+	"github.com/PhilAldridge/TODO-GO/models"
 	"github.com/golang-jwt/jwt/v5"
 )
-
-type contextKey string
 
 func JWTMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +38,7 @@ func JWTMiddleware(next http.Handler) http.Handler {
 		claims := token.Claims.(jwt.MapClaims)
 		username := claims["username"].(string)
 
-		ctx := context.WithValue(r.Context(), contextKey("username"), username)
+		ctx := context.WithValue(r.Context(), models.ContextKey("username"), username)
 
 		// Token is valid — continue
 		next.ServeHTTP(w, r.WithContext(ctx))

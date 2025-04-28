@@ -66,7 +66,6 @@ func (h *UserApiHandler) handlePost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), http.StatusFailedDependency)
 		return
 	}
-	fmt.Println(token)
 	w.Write([]byte(token))
 
 }

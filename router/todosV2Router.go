@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/PhilAldridge/TODO-GO/models"
 	"github.com/PhilAldridge/TODO-GO/store"
 	"github.com/google/uuid"
 )
@@ -15,7 +16,7 @@ func NewV2ApiHandler(store store.Store) TodoApiHandlerV2 {
 }
 
 func (h *TodoApiHandlerV2) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.username = r.Context().Value("username").(string)
+	h.username = r.Context().Value(models.ContextKey("username")).(string)
 
 	switch {
 	case r.Method == http.MethodPut:

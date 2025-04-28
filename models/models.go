@@ -20,3 +20,4 @@ type User struct {
 	PasswordHash	[]byte		`json:"PasswordHash"`
 }
 
+type ContextKey string

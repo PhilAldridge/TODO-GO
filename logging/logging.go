@@ -6,14 +6,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/PhilAldridge/TODO-GO/models"
 	"github.com/google/uuid"
 )
 
-type contextKey string
-
 const (
-	traceIDKey contextKey = "traceID"
-	loggerKey  contextKey = "logger"
+	traceIDKey models.ContextKey = "traceID"
+	loggerKey  models.ContextKey = "logger"
 )
 
 func generateTraceID() string {
