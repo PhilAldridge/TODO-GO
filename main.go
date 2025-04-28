@@ -14,6 +14,7 @@ import (
 	"github.com/PhilAldridge/TODO-GO/router"
 	"github.com/PhilAldridge/TODO-GO/store"
 	"github.com/PhilAldridge/TODO-GO/users"
+	_ "github.com/lib/pq"
 )
 
 var (
@@ -35,8 +36,11 @@ func main() {
 	case "json":
 		todoStore = &store.JSONStore{}
 		usersStore = &users.JSONUsers{}
+	case "sql":
+		todoStore = store.NewSQLStore()
+		defer todoStore.Close()
 	default:
-		log.Fatal("valid modes: json, mem")
+		log.Fatal("valid modes: json, mem,sql")
 	}
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))

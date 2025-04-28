@@ -70,3 +70,5 @@ func (t *JSONStore) DeleteTodo(id uuid.UUID, username string) error {
 	}
 	return err
 }
+
+func(t *JSONStore) Close() {}

@@ -115,3 +115,5 @@ func (t *InMemoryStore) DeleteTodo(id uuid.UUID, username string) error {
 	}
 	return errors.New("todo not found")
 }
+
+func(t *InMemoryStore) Close() {}

@@ -13,6 +13,11 @@ var (
 	PortNo        string
 	JwtKey        []byte
 	BaseUrl       string
+	SqlPortNo     string
+	SqlUser       string
+	SqlPassword   string
+	SqlDbName     string
+	SqlHost       string
 )
 
 func LoadConfig(envFile string) {
@@ -44,5 +49,30 @@ func LoadConfig(envFile string) {
 	BaseUrl = os.Getenv("base_url")
 	if len(BaseUrl) == 0 {
 		log.Fatal("base_url is not set in the environment")
+	}
+
+	SqlDbName = os.Getenv("sql_db_name")
+	if len(SqlDbName) == 0 {
+		log.Fatal("sql_db_name is not set in the environment")
+	}
+
+	SqlPassword = os.Getenv("sql_password")
+	if len(SqlPassword) == 0 {
+		log.Fatal("sql_password is not set in the environment")
+	}
+
+	SqlPortNo = os.Getenv("sql_port_number")
+	if len(SqlPortNo) == 0 {
+		log.Fatal("sql_port_number is not set in the environment")
+	}
+
+	SqlUser = os.Getenv("sql_username")
+	if len(SqlUser) == 0 {
+		log.Fatal("sql_username is not set in the environment")
+	}
+
+	SqlHost = os.Getenv("sql_host")
+	if len(SqlHost) == 0 {
+		log.Fatal("sql_host is not set in the environment")
 	}
 }

@@ -22,4 +22,5 @@ type Store interface {
 		username string,
 	) (models.Todo, error)
 	DeleteTodo(id uuid.UUID, username string) error
+	Close()
 }
