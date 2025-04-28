@@ -37,7 +37,7 @@ func main() {
 		todoStore = &store.JSONStore{}
 		usersStore = &users.JSONUsers{}
 	case "sql":
-		todoStore = store.NewSQLStore()
+		todoStore,usersStore = store.NewSQLStore()
 		defer todoStore.Close()
 	default:
 		log.Fatal("valid modes: json, mem,sql")

@@ -9,6 +9,7 @@ import (
 
 	"github.com/PhilAldridge/TODO-GO/lib"
 	"github.com/PhilAldridge/TODO-GO/models"
+	"github.com/PhilAldridge/TODO-GO/users"
 	"github.com/google/uuid"
 )
 
@@ -18,7 +19,7 @@ type SQLTodoStore struct {
 	db    *sql.DB
 }
 
-func NewSQLStore() *SQLTodoStore {
+func NewSQLStore() (*SQLTodoStore,*users.SQLUsers) {
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		lib.SqlHost, lib.SqlPortNo, lib.SqlUser, lib.SqlPassword, lib.SqlDbName)
@@ -35,7 +36,7 @@ func NewSQLStore() *SQLTodoStore {
 	}
 	newStore := &SQLTodoStore{db: db}
 	newStore.setupDB()
-	return newStore
+	return newStore, users.NewSQLUsersStore(db)
 }
 
 func (t *SQLTodoStore) Close() {
@@ -165,7 +166,8 @@ func (t *SQLTodoStore) DeleteTodo(id uuid.UUID,	username string)  error {
 func (t *SQLTodoStore) setupDB() {
 	sqlStatement := `CREATE TABLE IF NOT EXISTS users (
 		id uuid Primary Key,
-		username TEXT
+		username TEXT UNIQUE,
+		passwordHash TEXT
 	)`
 	_, err := t.db.Exec(sqlStatement)
 	if err != nil {
