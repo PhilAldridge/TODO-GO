@@ -20,7 +20,6 @@ var (
 )
 
 func login() {
-	fmt.Printf("username: %s, password: %s\n", username, password)
 	if username != "" {
 		url = fmt.Sprintf("%s%s/TodosV2",lib.BaseUrl, lib.PortNo)
 		body, _ := json.Marshal(router.UserPutBody{

@@ -24,7 +24,7 @@ func NewSQLStore() (*SQLTodoStore,*users.SQLUsers) {
 		"password=%s dbname=%s sslmode=disable",
 		lib.SqlHost, lib.SqlPortNo, lib.SqlUser, lib.SqlPassword, lib.SqlDbName)
 
-	fmt.Println(psqlInfo)
+	
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
