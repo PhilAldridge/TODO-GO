@@ -119,16 +119,16 @@ func (t *SQLTodoStore) UpdateTodo(id uuid.UUID,
 ) (models.Todo, error) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
-	sqlStatement:= `UPDATE todos
-	SET $1 = $2
-	WHERE id = $3 AND authorusername = $4
+	sqlStatement:= fmt.Sprintf(`UPDATE todos
+	SET %s = $1
+	WHERE id = $2 AND authorusername = $3
 	RETURNING 
 		id
 		,label
 		,authorusername
 		,deadline
-		,completed`
-	res:= t.db.QueryRow(sqlStatement, field, updatedValue, id, username)
+		,completed`,field)
+	res:= t.db.QueryRow(sqlStatement, updatedValue, id, username)
 	todo:= models.Todo{}
 	switch err:= res.Scan(
 		&todo.Id,
@@ -146,19 +146,19 @@ func (t *SQLTodoStore) UpdateTodo(id uuid.UUID,
 	}	
 }
 
-func (t *SQLTodoStore) DeleteTodo(id uuid.UUID,	username string) (uuid.UUID, error) {
+func (t *SQLTodoStore) DeleteTodo(id uuid.UUID,	username string)  error {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 	sqlStatement:= `DELETE FROM todos
 	WHERE id = $1 AND authorusername = $2`
 	res,err:= t.db.Exec(sqlStatement, id, username)
 	if err!=nil {
-		return uuid.UUID{},err
+		return err
 	}
 	if count,err:= res.RowsAffected(); count==0 || err!=nil {
-		return uuid.UUID{}, errors.New("todo not found")
+		return errors.New("todo not found")
 	}
-	return id, nil
+	return nil
 }
 
 
