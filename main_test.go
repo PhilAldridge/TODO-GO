@@ -23,104 +23,100 @@ func TestMain(m *testing.M) {
 }
 
 func TestConcurrentPutAndGet(t *testing.T) {
-	server := http.NewServeMux()
-	store := &store.JSONStore{}
-	api := router.NewV1ApiHandler(store)
-	server.Handle("/Todos/", &api)
-	server.Handle("/Todos", &api)
+	server := setupServer()
 
 	for i := 0; i < 50; i++ {
-		t.Run("ParallelTestV1", func(t *testing.T) {
+		t.Run(fmt.Sprintf("ParallelTestV1-%d", i), func(t *testing.T) {
 			t.Parallel()
 
 			payload := router.V1PutBody{
 				Label:    "test" + strconv.Itoa(i),
 				Deadline: "2025-01-01",
 			}
-			b, _ := json.Marshal(payload)
 
-			req := httptest.NewRequest(http.MethodPut, "/Todos", bytes.NewBuffer(b))
-			req.Header.Set("Content-Type", "application/json")
-			w := httptest.NewRecorder()
-			server.ServeHTTP(w, req)
+			resp := sendRequest(server, http.MethodPut, "/Todos", payload, map[string]string{
+				"Content-Type": "application/json",
+			})
+			mustStatusOK(t, resp, "PUT")
 
-			if w.Code != http.StatusOK {
-				t.Errorf("PUT: unexpected status: %d", w.Code)
-			}
-
-			req = httptest.NewRequest(http.MethodGet, "/Todos", nil)
-			w = httptest.NewRecorder()
-			server.ServeHTTP(w, req)
-
-			if w.Code != http.StatusOK {
-				t.Errorf("GET: unexpected status: %d", w.Code)
-			}
+			resp = sendRequest(server, http.MethodGet, "/Todos", nil, nil)
+			mustStatusOK(t, resp, "GET")
 		})
 	}
 }
 
-func TestConcurrentPutAndGetMultipleUsers(t *testing.T) {
-	server := http.NewServeMux()
-	todoStore, userStore := store.NewSQLStore()
-	todoApi := router.NewV2ApiHandler(todoStore)
-	server.Handle("/TodosV2/", auth.JWTMiddleware(&todoApi))
-	server.Handle("/TodosV2", auth.JWTMiddleware(&todoApi))
+func TestConcurrentMultipleUsers(t *testing.T) {
+	server := setupServer()
 
-	userApi := router.NewUserApiHandler(userStore)
-	server.Handle("/Users/", &userApi)
-	server.Handle("/Users", &userApi)
-
-	for i := 2; i < 50; i++ {
-		t.Run("ParallelTestV2", func(t *testing.T) {
+	for i := 0; i < 50; i++ {
+		t.Run(fmt.Sprintf("ParallelTestV2-%d", i), func(t *testing.T) {
 			t.Parallel()
 
-			payload := router.UserPutBody{
+			user := router.UserPutBody{
 				Username: "user" + strconv.Itoa(i),
 				Password: "password" + strconv.Itoa(i),
 			}
-			b, _ := json.Marshal(payload)
 
-			//Create user
-			req:= httptest.NewRequest(http.MethodPut, "/Users", bytes.NewBuffer(b))
-			req.Header.Set("Content-Type", "application/json")
-			w:= httptest.NewRecorder()
-			server.ServeHTTP(w, req)
+			sendRequest(server, http.MethodPut, "/Users", user, map[string]string{
+				"Content-Type": "application/json",
+			})
 
-			//Login
-			req= httptest.NewRequest(http.MethodPost, "/Users", bytes.NewBuffer(b))
-			req.Header.Set("Content-Type", "application/json")
-			w= httptest.NewRecorder()
-			server.ServeHTTP(w, req)
+			resp := sendRequest(server, http.MethodPost, "/Users", user, map[string]string{
+				"Content-Type": "application/json",
+			})
+			mustStatusOK(t, resp, "Login")
 
-			if w.Code != http.StatusOK {
-				t.Errorf("Login: unexpected status: %d", w.Code)
-			}
+			jwt := resp.Body.String()
 
-			resBody, err := io.ReadAll(w.Body)
-			if err != nil {
-				t.Errorf("client: could not read response body: %s\n", err)
-
-			}
-
-			//Use JWT to authorise PUT method in V2API
-			jwt:= string(resBody)
-			fmt.Println(jwt)
-			V2payload:= router.V1PutBody{
+			todo := router.V1PutBody{
 				Label:    "test" + strconv.Itoa(i),
 				Deadline: "2025-01-01",
 			}
-			b,_= json.Marshal(V2payload)
 
-			req= httptest.NewRequest(http.MethodPut, "/TodosV2", bytes.NewBuffer(b))
-			req.Header.Set("Content-Type", "application/json")
-			req.Header.Set("Authorization","Bearer "+jwt)
-			w = httptest.NewRecorder()
-			server.ServeHTTP(w, req)
-
-			if w.Code != http.StatusOK {
-				t.Errorf("Put: unexpected status: %d", w.Code)
-			}
-
+			resp = sendRequest(server, http.MethodPut, "/TodosV2", todo, map[string]string{
+				"Content-Type":  "application/json",
+				"Authorization": "Bearer " + jwt,
+			})
+			mustStatusOK(t, resp, "PUT with JWT")
 		})
 	}
+}
+
+func sendRequest(server http.Handler, method, path string, body any, headers map[string]string) *httptest.ResponseRecorder {
+	var b io.Reader
+	if body != nil {
+		jsonBytes, _ := json.Marshal(body)
+		b = bytes.NewBuffer(jsonBytes)
+	}
+
+	req := httptest.NewRequest(method, path, b)
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+
+	w := httptest.NewRecorder()
+	server.ServeHTTP(w, req)
+	return w
+}
+
+func mustStatusOK(t *testing.T, resp *httptest.ResponseRecorder, label string) {
+	t.Helper()
+	if resp.Code != http.StatusOK {
+		t.Errorf("%s: unexpected status: %d", label, resp.Code)
+	}
+}
+
+func setupServer() http.Handler {
+	server := http.NewServeMux()
+	todoStore, userStore := store.NewSQLStore()
+	api := router.NewV1ApiHandler(todoStore)
+	server.Handle("/Todos/", &api)
+	server.Handle("/Todos", &api)
+	todoApi := router.NewV2ApiHandler(todoStore)
+	server.Handle("/TodosV2/", auth.JWTMiddleware(&todoApi))
+	server.Handle("/TodosV2", auth.JWTMiddleware(&todoApi))
+	userApi := router.NewUserApiHandler(userStore)
+	server.Handle("/Users/", &userApi)
+	server.Handle("/Users", &userApi)
+	return server
 }
