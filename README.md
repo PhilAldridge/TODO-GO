@@ -1,6 +1,6 @@
-#Todo app in golang
+# Todo app in golang
 
-##Introduction
+## Introduction
 This project was created following the requirements of the main task in the BJSS Go Academy.
 It contains several features:
 * Three separate modes of storage, in-memory, local JSON file or postgreSQL database.
