@@ -37,7 +37,7 @@ func main() {
 		todoStore = &store.JSONStore{}
 		usersStore = &users.JSONUsers{}
 	case "sql":
-		todoStore,usersStore = store.NewSQLStore()
+		todoStore, usersStore = store.NewSQLStore()
 		defer todoStore.Close()
 	default:
 		log.Fatal("valid modes: json, mem,sql")
@@ -58,6 +58,16 @@ func main() {
 	mux.Handle("/Users", &usersapi)
 	mux.Handle("/TodosV2/", auth.JWTMiddleware(&v2api))
 	mux.Handle("/TodosV2", auth.JWTMiddleware(&v2api))
+
+	/*
+		Splitting out the handlers and calling them directly
+	*/
+	router.SetupTodo(todoStore)
+	mux.HandleFunc("GET /Todos", router.HandleGet3)
+	mux.HandleFunc("DELETE /Todos", router.HandleDelete3)
+	mux.HandleFunc("PATCH /Todos", router.HandlePatch3)
+	mux.HandleFunc("PUT /Todos", router.HandlePut3)
+
 	wrapped := logging.WithTraceIDAndLogger(
 		logging.LoggingMiddleware(mux),
 	)
