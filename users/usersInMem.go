@@ -12,7 +12,7 @@ import (
 type InMemoryUsers struct {
 	Users
 	users []models.User
-	mutex sync.Mutex
+	mutex sync.RWMutex
 }
 
 func NewInMemoryUsersStore() *InMemoryUsers {
@@ -51,8 +51,8 @@ func (u *InMemoryUsers) CreateUser(username string, password string) (uuid.UUID,
 }
 
 func (u *InMemoryUsers) Login(username string, password string) (uuid.UUID,error) {
-	u.mutex.Lock()
-	defer u.mutex.Unlock()
+	u.mutex.RLock()
+	defer u.mutex.RUnlock()
 
 	for _,v:= range u.users {
 		if v.Username == username {

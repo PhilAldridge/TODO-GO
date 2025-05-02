@@ -13,7 +13,7 @@ import (
 type InMemoryStore struct {
 	Store
 	todos []models.Todo
-	mutex sync.Mutex
+	mutex sync.RWMutex
 }
 
 func NewInMemoryTodoStore() *InMemoryStore {
@@ -43,8 +43,8 @@ func (t *InMemoryStore) AddTodo(label string, deadline time.Time, username strin
 }
 
 func (t *InMemoryStore) GetTodos(username string) []models.Todo {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
 	usersTodos:= []models.Todo{}
 	for _,todo:= range t.todos {
 		if todo.AuthorUsername == username {
@@ -56,8 +56,8 @@ func (t *InMemoryStore) GetTodos(username string) []models.Todo {
 }
 
 func (t *InMemoryStore) GetAllTodos() []models.Todo {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
 	return t.todos
 }
 
@@ -92,8 +92,8 @@ func (t *InMemoryStore) UpdateTodo(id uuid.UUID, field string, updatedValue stri
 }
 
 func (t *InMemoryStore) GetTodoById(id uuid.UUID, username string) (models.Todo, error) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
 
 	for _, todo := range t.todos {
 		if todo.Id == id && todo.AuthorUsername == username {

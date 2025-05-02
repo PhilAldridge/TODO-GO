@@ -15,7 +15,7 @@ import (
 
 type SQLTodoStore struct {
 	Store
-	mutex sync.Mutex
+	mutex sync.RWMutex
 	db    *sql.DB
 }
 
@@ -57,8 +57,8 @@ func (t *SQLTodoStore) AddTodo(label string,deadline time.Time,	username string)
 }
 
 func (t *SQLTodoStore) GetTodos(username string) []models.Todo {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
 	sqlStatement:= `SELECT 
 		id
 		,label
@@ -85,8 +85,8 @@ func (t *SQLTodoStore) GetTodos(username string) []models.Todo {
 }
 
 func (t *SQLTodoStore) GetTodoById(id uuid.UUID, username string) (models.Todo, error) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
 	sqlStatement:= `SELECT 
 		id
 		,label

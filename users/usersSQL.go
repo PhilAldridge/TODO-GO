@@ -11,7 +11,7 @@ import (
 
 type SQLUsers struct {
 	Users
-	mutex sync.Mutex
+	mutex sync.RWMutex
 	db    *sql.DB
 }
 
@@ -39,8 +39,8 @@ func (u *SQLUsers) CreateUser(username string, password string) (uuid.UUID, erro
 }
 
 func (u *SQLUsers) Login(username string, password string) (uuid.UUID, error) {
-	u.mutex.Lock()
-	defer u.mutex.Unlock()
+	u.mutex.RLock()
+	defer u.mutex.RUnlock()
 
 	sqlStatement := `SELECT id, passwordHash FROM users WHERE username = $1`
 

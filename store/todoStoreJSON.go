@@ -11,7 +11,7 @@ import (
 
 type JSONStore struct {
 	Store
-	mutex sync.Mutex
+	mutex sync.RWMutex
 }
 
 func (t *JSONStore) AddTodo(label string, deadline time.Time, username string) (uuid.UUID, error) {
@@ -28,8 +28,8 @@ func (t *JSONStore) AddTodo(label string, deadline time.Time, username string) (
 }
 
 func (t *JSONStore) GetTodos(username string) []models.Todo {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
 
 	todos := lib.ReadJsonStore()
 	store := LoadInMemoryTodoStore(todos)
@@ -50,8 +50,8 @@ func (t *JSONStore) UpdateTodo(id uuid.UUID, field string, updatedValue string, 
 }
 
 func (t *JSONStore) GetTodoById(id uuid.UUID, username string) (models.Todo, error) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
 
 	todos := lib.ReadJsonStore()
 	store := LoadInMemoryTodoStore(todos)

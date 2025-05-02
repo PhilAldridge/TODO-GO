@@ -9,7 +9,7 @@ import (
 
 type JSONUsers struct {
 	Users
-	mutex sync.Mutex
+	mutex sync.RWMutex
 }
 
 func NewJSONUsersStore() *JSONUsers {
@@ -34,8 +34,8 @@ func (u *JSONUsers) CreateUser(username string, password string) (uuid.UUID,erro
 }
 
 func (u *JSONUsers) Login(username string, password string) (uuid.UUID,error) {
-	u.mutex.Lock()
-	defer u.mutex.Unlock()
+	u.mutex.RLock()
+	defer u.mutex.RUnlock()
 
 	users:= lib.ReadJsonUsers()
 	userStore:=LoadInMemoryUsersStore(users)
