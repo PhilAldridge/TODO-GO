@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Todo List</title>
+</head>
+<body>
+    <h1>Todos</h1>
+    <ul>
+        {{range .}}
+        <li>
+            <h4>{{.Label}} <input type="checkbox" disabled {{if .Completed}}checked{{end}}></h4>
+            <p>Deadline: {{.Deadline | formatUKDate}}</p>
+        </li>
+        {{else}}
+        <li>No todos found.</li>
+        {{end}}
+    </ul>
+</body>
+</html>

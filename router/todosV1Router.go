@@ -91,3 +91,9 @@ func (h *TodoApiHandler) HandleDelete(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Write([]byte("Todo Deleted Successfully"))
 }
+
+func (h *TodoApiHandler) HandleList(w http.ResponseWriter, r *http.Request) {
+	todos := h.store.GetTodos("")
+	ServeTemplate("./webTemplates/list.html",todos,w)
+}
+

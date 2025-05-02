@@ -2,6 +2,7 @@ package router
 
 import (
 	"encoding/json"
+	"html/template"
 	"net/http"
 	"time"
 
@@ -41,3 +42,22 @@ func createToken(username string, id uuid.UUID) (string, error) {
 
 	return tokenString, nil
 }
+
+func ServeTemplate(path string, data interface{}, w http.ResponseWriter) {
+	funcMap := template.FuncMap{
+		"formatUKDate": func(t time.Time) string {
+			return t.Format("02/01/2006") // DD/MM/YYYY
+		},
+	}
+
+	tmpl,err :=  template.New("list.html").Funcs(funcMap).ParseFiles(path)
+	if err != nil {
+		http.Error(w, "Error parsing template", http.StatusInternalServerError)
+		return
+	}
+	err = tmpl.Execute(w, data)
+	if err != nil {
+		http.Error(w, "Error rendering template", http.StatusInternalServerError)
+	}
+}
+
