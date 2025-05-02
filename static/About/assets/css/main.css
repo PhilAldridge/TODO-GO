@@ -50,15 +50,6 @@ mark {
   background-color: transparent;
   color: inherit; }
 
-input::-moz-focus-inner {
-  border: 0;
-  padding: 0; }
-
-input, select, textarea {
-  -moz-appearance: none;
-  -webkit-appearance: none;
-  -ms-appearance: none;
-  appearance: none; }
 
 /* Basic */
 @-ms-viewport {
@@ -1087,22 +1078,11 @@ select {
 textarea {
   padding: 0.75em 1em; }
 
-input[type="checkbox"],
-input[type="radio"] {
-  -moz-appearance: none;
-  -webkit-appearance: none;
-  -ms-appearance: none;
-  appearance: none;
-  display: block;
-  float: left;
-  margin-right: -2em;
-  opacity: 0;
-  width: 1em;
-  z-index: -1; }
+
   input[type="checkbox"] + label,
   input[type="radio"] + label {
     text-decoration: none;
-    color: #7f888f;
+    color: #283844;
     cursor: pointer;
     display: inline-block;
     font-size: 1em;
@@ -1126,7 +1106,7 @@ input[type="radio"] {
     input[type="radio"] + label:before {
       background: #ffffff;
       border-radius: 0.375em;
-      border: solid 1px rgba(210, 215, 217, 0.75);
+      border: solid 1px rgba(24, 32, 36, 0.75);
       content: '';
       display: inline-block;
       font-size: 0.8em;
@@ -1139,8 +1119,8 @@ input[type="radio"] {
       width: 2.0625em; }
   input[type="checkbox"]:checked + label:before,
   input[type="radio"]:checked + label:before {
-    background: #3d4449;
-    border-color: #3d4449;
+    background: #111619;
+    border-color: #0f1417;
     color: #ffffff;
     content: '\f00c'; }
   input[type="checkbox"]:focus + label:before,
@@ -1578,7 +1558,13 @@ button,
   .button.disabled,
   .button:disabled {
     pointer-events: none;
-    opacity: 0.25; }
+    opacity: 0.75; }
+
+  input[type="checkbox"]:disabled {
+      background-color: darkblue;
+      border-color: darkblue;
+      color: darkblue
+  }
 
 /* Mini Posts */
 .mini-posts article {
