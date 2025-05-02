@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"time"
 
 	"github.com/PhilAldridge/TODO-GO/auth"
 	"github.com/PhilAldridge/TODO-GO/lib"
@@ -52,8 +55,15 @@ func main() {
 	wrapped := logging.WithTraceIDAndLogger(
 		logging.LoggingMiddleware(mux),
 	)
-
+	srv:= &http.Server{
+		Addr: lib.PortNo,
+		Handler: mux,
+	}
+	idleConnsClosed:= shutdownChannel(srv)
 	http.ListenAndServe(lib.PortNo, wrapped)
+
+	<-idleConnsClosed
+	log.Println("Server shutdown complete")
 }
 
 func SetupServer(todoStore store.Store, userStore users.Users) http.Handler {
@@ -77,5 +87,30 @@ func SetupServer(todoStore store.Store, userStore users.Users) http.Handler {
 	mux.HandleFunc("GET /List",v1api.HandleList)
 
 	return mux
+}
+
+func shutdownChannel(srv *http.Server) chan struct{} {
+	// Channel to signal when shutdown is complete
+	idleConnsClosed := make(chan struct{})
+
+	// Handle interrupt signal for graceful shutdown
+	go func() {
+		sigint := make(chan os.Signal, 1)
+		signal.Notify(sigint, os.Interrupt)
+		<-sigint
+
+		log.Println("Shutdown signal received")
+
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		if err := srv.Shutdown(ctx); err != nil {
+			log.Printf("Server shutdown error: %v", err)
+			os.Exit(1)
+		}
+		close(idleConnsClosed)
+	}()
+
+	return idleConnsClosed
 }
 
