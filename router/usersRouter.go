@@ -23,18 +23,7 @@ func NewUserApiHandler(users users.Users) UserApiHandler {
 	return UserApiHandler{users: users}
 }
 
-func (h *UserApiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	switch {
-	case r.Method == http.MethodPut:
-		h.handlePut(w, r)
-	case r.Method == http.MethodPost:
-		h.handlePost(w, r)
-	default:
-		http.Error(w, "Invalid request", http.StatusBadRequest)
-	}
-}
-
-func (h *UserApiHandler) handlePut(w http.ResponseWriter, r *http.Request) {
+func (h *UserApiHandler) HandlePut(w http.ResponseWriter, r *http.Request) {
 	var body UserPutBody
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if body.Username == "" || body.Password == "" || err != nil {
@@ -49,7 +38,7 @@ func (h *UserApiHandler) handlePut(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(uuid.String()))
 }
 
-func (h *UserApiHandler) handlePost(w http.ResponseWriter, r *http.Request) {
+func (h *UserApiHandler) HandlePost(w http.ResponseWriter, r *http.Request) {
 	var body UserPutBody
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if body.Username == "" || body.Password == "" || err != nil {

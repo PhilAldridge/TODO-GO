@@ -51,13 +51,18 @@ func main() {
 	v1api := router.NewV1ApiHandler(todoStore)
 	usersapi := router.NewUserApiHandler(usersStore)
 	v2api := router.NewV2ApiHandler(todoStore)
+	
+	mux.HandleFunc("GET /Todos",v1api.HandleGet)
+	mux.HandleFunc("PATCH /Todos",v1api.HandlePatch)
+	mux.HandleFunc("PUT /Todos",v1api.HandlePut)
+	mux.HandleFunc("DELETE /Todos",v1api.HandleDelete)
+	mux.HandleFunc("PUT /Users",usersapi.HandlePut)
+	mux.HandleFunc("POST /Users",usersapi.HandlePost)
+	mux.HandleFunc("GET /TodosV2",auth.JWTMiddleware(v2api.HandleGet))
+	mux.HandleFunc("PATCH /TodosV2",auth.JWTMiddleware(v2api.HandlePatch))
+	mux.HandleFunc("PUT /TodosV2",auth.JWTMiddleware(v2api.HandlePut))
+	mux.HandleFunc("DELETE /TodosV2",auth.JWTMiddleware(v2api.HandleDelete))
 
-	mux.Handle("/Todos/", &v1api)
-	mux.Handle("/Todos", &v1api)
-	mux.Handle("/Users/", &usersapi)
-	mux.Handle("/Users", &usersapi)
-	mux.Handle("/TodosV2/", auth.JWTMiddleware(&v2api))
-	mux.Handle("/TodosV2", auth.JWTMiddleware(&v2api))
 	wrapped := logging.WithTraceIDAndLogger(
 		logging.LoggingMiddleware(mux),
 	)

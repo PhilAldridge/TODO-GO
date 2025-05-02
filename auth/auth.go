@@ -10,7 +10,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func JWTMiddleware(next http.Handler) http.Handler {
+func JWTMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
@@ -41,6 +41,6 @@ func JWTMiddleware(next http.Handler) http.Handler {
 		ctx := context.WithValue(r.Context(), models.ContextKey("username"), username)
 
 		// Token is valid — continue
-		next.ServeHTTP(w, r.WithContext(ctx))
+		next(w, r.WithContext(ctx))
 	})
 }

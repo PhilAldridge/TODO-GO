@@ -14,22 +14,7 @@ func NewV1ApiHandler(store store.Store) TodoApiHandler {
 	return TodoApiHandler{store: store}
 }
 
-func (h *TodoApiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	switch {
-	case r.Method == http.MethodPut:
-		h.handlePut(w, r)
-	case r.Method == http.MethodGet:
-		h.handleGet(w, r)
-	case r.Method == http.MethodPatch:
-		h.handlePatch(w, r)
-	case r.Method == http.MethodDelete:
-		h.handleDelete(w, r)
-	default:
-		http.Error(w, "Invalid request", http.StatusMethodNotAllowed)
-	}
-}
-
-func (h *TodoApiHandler) handlePut(w http.ResponseWriter, r *http.Request) {
+func (h *TodoApiHandler) HandlePut(w http.ResponseWriter, r *http.Request) {
 	var body V1PutBody
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if body.Label == "" || err != nil {
@@ -49,7 +34,7 @@ func (h *TodoApiHandler) handlePut(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(todoId.String()))
 }
 
-func (h *TodoApiHandler) handleGet(w http.ResponseWriter, r *http.Request) {
+func (h *TodoApiHandler) HandleGet(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	uuid, err := uuid.Parse(id)
 	if id == "" || err != nil {
@@ -65,7 +50,7 @@ func (h *TodoApiHandler) handleGet(w http.ResponseWriter, r *http.Request) {
 	marshalAndWrite(w, todo)
 }
 
-func (h *TodoApiHandler) handlePatch(w http.ResponseWriter, r *http.Request) {
+func (h *TodoApiHandler) HandlePatch(w http.ResponseWriter, r *http.Request) {
 	var body V1PatchBody
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
@@ -86,7 +71,7 @@ func (h *TodoApiHandler) handlePatch(w http.ResponseWriter, r *http.Request) {
 	marshalAndWrite(w, todo)
 }
 
-func (h *TodoApiHandler) handleDelete(w http.ResponseWriter, r *http.Request) {
+func (h *TodoApiHandler) HandleDelete(w http.ResponseWriter, r *http.Request) {
 	var body V1DeleteBody
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {

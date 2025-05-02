@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/PhilAldridge/TODO-GO/models"
 	"github.com/PhilAldridge/TODO-GO/store"
 	"github.com/google/uuid"
 )
@@ -15,24 +14,7 @@ func NewV2ApiHandler(store store.Store) TodoApiHandlerV2 {
 	return TodoApiHandlerV2{store: store}
 }
 
-func (h *TodoApiHandlerV2) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.username = r.Context().Value(models.ContextKey("username")).(string)
-
-	switch {
-	case r.Method == http.MethodPut:
-		h.handlePut(w, r)
-	case r.Method == http.MethodGet:
-		h.handleGet(w, r)
-	case r.Method == http.MethodPatch:
-		h.handlePatch(w, r)
-	case r.Method == http.MethodDelete:
-		h.handleDelete(w, r)
-	default:
-		http.Error(w, "Invalid request", http.StatusBadRequest)
-	}
-}
-
-func (h *TodoApiHandlerV2) handlePut(w http.ResponseWriter, r *http.Request) {
+func (h *TodoApiHandlerV2) HandlePut(w http.ResponseWriter, r *http.Request) {
 	var body V1PutBody
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if body.Label == "" || err != nil {
@@ -52,7 +34,7 @@ func (h *TodoApiHandlerV2) handlePut(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(todoId.String()))
 }
 
-func (h *TodoApiHandlerV2) handleGet(w http.ResponseWriter, r *http.Request) {
+func (h *TodoApiHandlerV2) HandleGet(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	uuid, err := uuid.Parse(id)
 	if id == "" || err != nil {
@@ -68,7 +50,7 @@ func (h *TodoApiHandlerV2) handleGet(w http.ResponseWriter, r *http.Request) {
 	marshalAndWrite(w, todo)
 }
 
-func (h *TodoApiHandlerV2) handlePatch(w http.ResponseWriter, r *http.Request) {
+func (h *TodoApiHandlerV2) HandlePatch(w http.ResponseWriter, r *http.Request) {
 	var body V1PatchBody
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
@@ -89,7 +71,7 @@ func (h *TodoApiHandlerV2) handlePatch(w http.ResponseWriter, r *http.Request) {
 	marshalAndWrite(w, todo)
 }
 
-func (h *TodoApiHandlerV2) handleDelete(w http.ResponseWriter, r *http.Request) {
+func (h *TodoApiHandlerV2) HandleDelete(w http.ResponseWriter, r *http.Request) {
 	var body V1DeleteBody
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
