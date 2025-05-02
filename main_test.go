@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/PhilAldridge/TODO-GO/auth"
 	"github.com/PhilAldridge/TODO-GO/lib"
 	"github.com/PhilAldridge/TODO-GO/router"
 	"github.com/PhilAldridge/TODO-GO/store"
@@ -23,7 +22,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestConcurrentPutAndGet(t *testing.T) {
-	server := setupServer()
+	todoStore, userStore := store.NewSQLStore()
+	server := SetupServer(todoStore,userStore)
 
 	for i := 0; i < 50; i++ {
 		t.Run(fmt.Sprintf("ParallelTestV1-%d", i), func(t *testing.T) {
@@ -46,7 +46,8 @@ func TestConcurrentPutAndGet(t *testing.T) {
 }
 
 func TestConcurrentMultipleUsers(t *testing.T) {
-	server := setupServer()
+	todoStore, userStore := store.NewSQLStore()
+	server := SetupServer(todoStore,userStore)
 
 	for i := 0; i < 50; i++ {
 		t.Run(fmt.Sprintf("ParallelTestV2-%d", i), func(t *testing.T) {
@@ -104,24 +105,4 @@ func mustStatusOK(t *testing.T, resp *httptest.ResponseRecorder, label string) {
 	if resp.Code != http.StatusOK {
 		t.Errorf("%s: unexpected status: %d", label, resp.Code)
 	}
-}
-
-func setupServer() http.Handler {
-	todoStore, userStore := store.NewSQLStore()
-	mux := http.NewServeMux()
-	v1api := router.NewV1ApiHandler(todoStore)
-	usersapi := router.NewUserApiHandler(userStore)
-	v2api := router.NewV2ApiHandler(todoStore)
-	
-	mux.HandleFunc("GET /Todos",v1api.HandleGet)
-	mux.HandleFunc("PATCH /Todos",v1api.HandlePatch)
-	mux.HandleFunc("PUT /Todos",v1api.HandlePut)
-	mux.HandleFunc("DELETE /Todos",v1api.HandleDelete)
-	mux.HandleFunc("PUT /Users",usersapi.HandlePut)
-	mux.HandleFunc("POST /Users",usersapi.HandlePost)
-	mux.HandleFunc("GET /TodosV2",auth.JWTMiddleware(v2api.HandleGet))
-	mux.HandleFunc("PATCH /TodosV2",auth.JWTMiddleware(v2api.HandlePatch))
-	mux.HandleFunc("PUT /TodosV2",auth.JWTMiddleware(v2api.HandlePut))
-	mux.HandleFunc("DELETE /TodosV2",auth.JWTMiddleware(v2api.HandleDelete))
-	return mux
 }

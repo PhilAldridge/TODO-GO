@@ -47,11 +47,21 @@ func main() {
 	slog.SetDefault(logger)
 
 	fmt.Println("Server listening on :8080")
+	mux := SetupServer(todoStore,usersStore)
+
+	wrapped := logging.WithTraceIDAndLogger(
+		logging.LoggingMiddleware(mux),
+	)
+
+	http.ListenAndServe(lib.PortNo, wrapped)
+}
+
+func SetupServer(todoStore store.Store, userStore users.Users) http.Handler {
 	mux := http.NewServeMux()
 	v1api := router.NewV1ApiHandler(todoStore)
-	usersapi := router.NewUserApiHandler(usersStore)
+	usersapi := router.NewUserApiHandler(userStore)
 	v2api := router.NewV2ApiHandler(todoStore)
-	
+
 	mux.HandleFunc("GET /Todos",v1api.HandleGet)
 	mux.HandleFunc("PATCH /Todos",v1api.HandlePatch)
 	mux.HandleFunc("PUT /Todos",v1api.HandlePut)
@@ -63,9 +73,6 @@ func main() {
 	mux.HandleFunc("PUT /TodosV2",auth.JWTMiddleware(v2api.HandlePut))
 	mux.HandleFunc("DELETE /TodosV2",auth.JWTMiddleware(v2api.HandleDelete))
 
-	wrapped := logging.WithTraceIDAndLogger(
-		logging.LoggingMiddleware(mux),
-	)
-
-	http.ListenAndServe(lib.PortNo, wrapped)
+	return mux
 }
+
