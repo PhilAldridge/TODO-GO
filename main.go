@@ -68,23 +68,23 @@ func main() {
 
 func SetupServer(todoStore store.Store, userStore users.Users) http.Handler {
 	mux := http.NewServeMux()
-	v1api := router.NewV1ApiHandler(todoStore)
+	//v1api := router.NewV1ApiHandler(todoStore)
 	usersapi := router.NewUserApiHandler(userStore)
 	v2api := router.NewV2ApiHandler(todoStore)
 	fs:= http.FileServer(http.Dir("./static"))
 
 	mux.Handle("/",fs)
-	mux.HandleFunc("GET /Todos",v1api.HandleGet)
-	mux.HandleFunc("PATCH /Todos",v1api.HandlePatch)
-	mux.HandleFunc("PUT /Todos",v1api.HandlePut)
-	mux.HandleFunc("DELETE /Todos",v1api.HandleDelete)
+	mux.HandleFunc("GET /Todos",v2api.HandleGet)
+	mux.HandleFunc("PATCH /Todos",v2api.HandlePatch)
+	mux.HandleFunc("PUT /Todos",v2api.HandlePut)
+	mux.HandleFunc("DELETE /Todos",v2api.HandleDelete)
 	mux.HandleFunc("PUT /Users",usersapi.HandlePut)
 	mux.HandleFunc("POST /Users",usersapi.HandlePost)
 	mux.HandleFunc("GET /TodosV2",auth.JWTMiddleware(v2api.HandleGet))
 	mux.HandleFunc("PATCH /TodosV2",auth.JWTMiddleware(v2api.HandlePatch))
 	mux.HandleFunc("PUT /TodosV2",auth.JWTMiddleware(v2api.HandlePut))
 	mux.HandleFunc("DELETE /TodosV2",auth.JWTMiddleware(v2api.HandleDelete))
-	mux.HandleFunc("GET /List",v1api.HandleList)
+	mux.HandleFunc("GET /List",v2api.HandleList)
 
 	return mux
 }

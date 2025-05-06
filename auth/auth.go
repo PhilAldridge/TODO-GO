@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -39,7 +40,7 @@ func JWTMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		username := claims["username"].(string)
 
 		ctx := context.WithValue(r.Context(), models.ContextKey("username"), username)
-
+		fmt.Println(username)
 		// Token is valid — continue
 		next(w, r.WithContext(ctx))
 	})
