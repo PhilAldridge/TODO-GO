@@ -18,7 +18,7 @@ type V1DeleteBody struct {
 }
 
 type TodoApiHandler struct {
-	actor chan<- store.StoreCommand
+	actor chan<- StoreCommand
 }
 
 type TodoApiHandlerV2 struct {
