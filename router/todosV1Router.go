@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/PhilAldridge/TODO-GO/store"
-	"github.com/google/uuid"
+	// "github.com/google/uuid"
 )
 
-func NewV1ApiHandler(store store.Store) TodoApiHandler {
-	return TodoApiHandler{store: store}
+func NewV1ApiHandler(todoStore store.Store) TodoApiHandler {
+	return TodoApiHandler{actor:store.StartStoreActor(todoStore)}
 }
 
 func (h *TodoApiHandler) HandlePut(w http.ResponseWriter, r *http.Request) {
@@ -26,74 +26,81 @@ func (h *TodoApiHandler) HandlePut(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Put must include a todo label and a deadline (in the form 2006-01-02)", http.StatusBadRequest)
 		return
 	}
-	todoId, err := h.store.AddTodo(body.Label, deadline, "")
-	if err != nil {
-		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), http.StatusInternalServerError)
+	replyCh:= make(chan store.IdErrReply)
+	h.actor<-store.AddTodoCmd{
+		Label: body.Label,
+		Deadline: deadline,
+		Username: "",
+		ReplyCh:replyCh,
+	}
+	reply:= <-replyCh
+	if reply.Error != nil {
+		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, reply.Error), http.StatusInternalServerError)
 		return
 	}
-	w.Write([]byte(todoId.String()))
+	w.Write([]byte(reply.Id.String()))
 }
 
 func (h *TodoApiHandler) HandleGet(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("id")
-	uuid, err := uuid.Parse(id)
-	if id == "" || err != nil {
-		todos := h.store.GetTodos("")
-		marshalAndWrite(w, todos)
-		return
-	}
-	todo, err := h.store.GetTodoById(uuid,"")
-	if err != nil {
-		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), http.StatusNotFound)
-		return
-	}
-	marshalAndWrite(w, todo)
+	// id := r.URL.Query().Get("id")
+	// uuid, err := uuid.Parse(id)
+	// if id == "" || err != nil {
+	// 	todos := h.store.GetTodos("")
+	// 	marshalAndWrite(w, todos)
+	// 	return
+	// }
+	// todo, err := h.store.GetTodoById(uuid,"")
+	// if err != nil {
+	// 	http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), http.StatusNotFound)
+	// 	return
+	// }
+	// marshalAndWrite(w, todo)
 }
 
 func (h *TodoApiHandler) HandlePatch(w http.ResponseWriter, r *http.Request) {
-	var body V1PatchBody
-	err := json.NewDecoder(r.Body).Decode(&body)
-	if err != nil {
-		http.Error(w, "Provide Id, Field, Value", http.StatusBadRequest)
-		return
-	}
+	// var body V1PatchBody
+	// err := json.NewDecoder(r.Body).Decode(&body)
+	// if err != nil {
+	// 	http.Error(w, "Provide Id, Field, Value", http.StatusBadRequest)
+	// 	return
+	// }
 
-	uuid, err := uuid.Parse(body.Id)
-	if body.Id == "" || err != nil {
-		http.Error(w, "Error: patch method requires a valid id", http.StatusBadRequest)
-		return
-	}
+	// uuid, err := uuid.Parse(body.Id)
+	// if body.Id == "" || err != nil {
+	// 	http.Error(w, "Error: patch method requires a valid id", http.StatusBadRequest)
+	// 	return
+	// }
 
-	todo, err := h.store.UpdateTodo(uuid, body.Field, body.Value,"")
-	if err != nil {
-		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), http.StatusNotFound)
-	}
-	marshalAndWrite(w, todo)
+	// todo, err := h.store.UpdateTodo(uuid, body.Field, body.Value,"")
+	// if err != nil {
+	// 	http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), http.StatusNotFound)
+	// }
+	// marshalAndWrite(w, todo)
 }
 
 func (h *TodoApiHandler) HandleDelete(w http.ResponseWriter, r *http.Request) {
-	var body V1DeleteBody
-	err := json.NewDecoder(r.Body).Decode(&body)
-	if err != nil {
-		http.Error(w, "Provide a valid id", http.StatusBadRequest)
-		return
-	}
-	uuid, err := uuid.Parse(body.Id)
-	if body.Id == "" || err != nil {
-		http.Error(w, "Error: delete method requires a valid id", http.StatusBadRequest)
-		return
-	}
+	// var body V1DeleteBody
+	// err := json.NewDecoder(r.Body).Decode(&body)
+	// if err != nil {
+	// 	http.Error(w, "Provide a valid id", http.StatusBadRequest)
+	// 	return
+	// }
+	// uuid, err := uuid.Parse(body.Id)
+	// if body.Id == "" || err != nil {
+	// 	http.Error(w, "Error: delete method requires a valid id", http.StatusBadRequest)
+	// 	return
+	// }
 
-	err = h.store.DeleteTodo(uuid,"")
-	if err != nil {
-		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), http.StatusNotFound)
-		return
-	}
-	w.Write([]byte("Todo Deleted Successfully"))
+	// err = h.store.DeleteTodo(uuid,"")
+	// if err != nil {
+	// 	http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err), http.StatusNotFound)
+	// 	return
+	// }
+	// w.Write([]byte("Todo Deleted Successfully"))
 }
 
 func (h *TodoApiHandler) HandleList(w http.ResponseWriter, r *http.Request) {
-	todos := h.store.GetTodos("")
-	ServeTemplate("./webTemplates/list.html",todos,w)
+	// todos := h.store.GetTodos("")
+	// ServeTemplate("./webTemplates/list.html",todos,w)
 }
 

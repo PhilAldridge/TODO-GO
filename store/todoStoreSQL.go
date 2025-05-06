@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/PhilAldridge/TODO-GO/lib"
@@ -15,7 +14,6 @@ import (
 
 type SQLTodoStore struct {
 	Store
-	mutex sync.RWMutex
 	db    *sql.DB
 }
 
@@ -44,8 +42,6 @@ func (t *SQLTodoStore) Close() {
 }
 
 func (t *SQLTodoStore) AddTodo(label string,deadline time.Time,	username string) (uuid.UUID, error) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
 	newUuid:= uuid.New()
 	sqlStatement:= `INSERT INTO todos (id, label, deadline, completed, authorusername)
 	VALUES ($1, $2, $3, false, $4)`
@@ -57,8 +53,6 @@ func (t *SQLTodoStore) AddTodo(label string,deadline time.Time,	username string)
 }
 
 func (t *SQLTodoStore) GetTodos(username string) []models.Todo {
-	t.mutex.RLock()
-	defer t.mutex.RUnlock()
 	sqlStatement:= `SELECT 
 		id
 		,label
@@ -85,8 +79,6 @@ func (t *SQLTodoStore) GetTodos(username string) []models.Todo {
 }
 
 func (t *SQLTodoStore) GetTodoById(id uuid.UUID, username string) (models.Todo, error) {
-	t.mutex.RLock()
-	defer t.mutex.RUnlock()
 	sqlStatement:= `SELECT 
 		id
 		,label
@@ -118,8 +110,6 @@ func (t *SQLTodoStore) UpdateTodo(id uuid.UUID,
 	updatedValue string,
 	username string,
 ) (models.Todo, error) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
 	sqlStatement:= fmt.Sprintf(`UPDATE todos
 	SET %s = $1
 	WHERE id = $2 AND authorusername = $3
@@ -148,8 +138,6 @@ func (t *SQLTodoStore) UpdateTodo(id uuid.UUID,
 }
 
 func (t *SQLTodoStore) DeleteTodo(id uuid.UUID,	username string)  error {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
 	sqlStatement:= `DELETE FROM todos
 	WHERE id = $1 AND authorusername = $2`
 	res,err:= t.db.Exec(sqlStatement, id, username)
