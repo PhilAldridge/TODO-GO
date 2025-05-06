@@ -130,15 +130,12 @@ func (h *TodoApiHandlerV2) HandleDelete(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *TodoApiHandlerV2) setUsername(r *http.Request) {
-	fmt.Println("and")
-	
 	username, ok := r.Context().Value(models.ContextKey("username")).(string)
 	if !ok {
 		h.username =""
 	} else {
 		h.username = username
 	}
-	fmt.Println(h.username)
 }
 
 func (h *TodoApiHandlerV2) HandleList(w http.ResponseWriter, r *http.Request) {
