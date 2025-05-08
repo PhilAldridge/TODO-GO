@@ -2,15 +2,73 @@ syntax = "proto3";
 
 package router;
 
+import "google/rpc/status.proto";
+
+option go_package = "github.com/PhilAldridge/TODO-GO/api;api";
+
 service TodoService {
-    rpc CreateTodo (CreateTodoRequest) returns (IdErrResponse);
-    rpc GetTodo (IdRequest) return (TodoErrResponse);
-    rpc ListTodos (ListRequest) returns (TodosResponse);
-    rpc DeleteTodos (IdRequest) returns (ErrResponse)
+  rpc AddTodo(AddTodoRequest) returns (AddTodoResponse);
+  rpc ListTodos(ListTodosRequest) returns (ListTodosResponse);
+  rpc GetTodoById(GetTodoByIdRequest) returns (GetTodoByIdResponse);
+  rpc UpdateTodo(UpdateTodoRequest) returns (UpdateTodoResponse);
+  rpc DeleteTodo(DeleteTodoRequest) returns (DeleteTodoResponse);
 }
 
-message CreateTodoRequest {
-    string Label = 1;
-    string Deadline = 2;
-    string Username = 3;
+message AddTodoRequest {
+  string label = 1;
+  string deadline = 2;  // parsed as time.Time in Go backend
+  string username = 3;
+}
+
+message AddTodoResponse {
+  string id = 1;
+  google.rpc.Status error = 2;
+}
+
+message ListTodosRequest {
+  string username = 1;
+}
+
+message ListTodosResponse {
+  repeated Todo todos = 1;
+  google.rpc.Status error = 2;
+}
+
+message GetTodoByIdRequest {
+  string id = 1;
+  string username = 2;
+}
+
+message GetTodoByIdResponse {
+  Todo todo = 1;
+  google.rpc.Status error = 2;
+}
+
+message UpdateTodoRequest {
+  string id = 1;
+  string field = 2;
+  string value = 3;
+  string username = 4;
+}
+
+message UpdateTodoResponse {
+  Todo todo = 1;
+  google.rpc.Status error = 2;
+}
+
+message DeleteTodoRequest {
+  string id = 1;
+  string username = 2;
+}
+
+message DeleteTodoResponse {
+  google.rpc.Status error = 1;
+}
+
+message Todo {
+  string id = 1;
+  string label = 2;
+  string deadline = 3; // returned as string
+  string username = 4;
+  bool completed = 5;
 }

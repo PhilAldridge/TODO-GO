@@ -111,4 +111,5 @@ func (a *StoreActor) run() {
 
 func (a *StoreActor) Stop() {
 	close(a.quitChan)
+	close(a.CommandChan)
 }
