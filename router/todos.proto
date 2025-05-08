@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package router;
+
+service TodoService {
+    rpc CreateTodo (CreateTodoRequest) returns (IdErrResponse);
+    rpc GetTodo (IdRequest) return (TodoErrResponse);
+    rpc ListTodos (ListRequest) returns (TodosResponse);
+    rpc DeleteTodos (IdRequest) returns (ErrResponse)
+}
+
+message CreateTodoRequest {
+    string Label = 1;
+    string Deadline = 2;
+    string Username = 3;
+}

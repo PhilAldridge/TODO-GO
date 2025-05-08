@@ -23,7 +23,7 @@ func TestMain(m *testing.M) {
 
 func TestConcurrentPutAndGet(t *testing.T) {
 	todoStore, userStore := store.NewSQLStore()
-	server := SetupServer(todoStore,userStore)
+	server,_ := SetupServer(todoStore,userStore)
 
 	for i := 0; i < 50; i++ {
 		t.Run(fmt.Sprintf("ParallelTestV1-%d", i), func(t *testing.T) {
@@ -34,12 +34,12 @@ func TestConcurrentPutAndGet(t *testing.T) {
 				Deadline: "2025-01-01",
 			}
 
-			resp := sendRequest(server, http.MethodPut, "/Todos", payload, map[string]string{
+			resp := sendRequest(server.Handler, http.MethodPut, "/Todos", payload, map[string]string{
 				"Content-Type": "application/json",
 			})
 			mustStatusOK(t, resp, "PUT")
 
-			resp = sendRequest(server, http.MethodGet, "/Todos", nil, nil)
+			resp = sendRequest(server.Handler, http.MethodGet, "/Todos", nil, nil)
 			mustStatusOK(t, resp, "GET")
 		})
 	}
@@ -47,7 +47,7 @@ func TestConcurrentPutAndGet(t *testing.T) {
 
 func TestConcurrentMultipleUsers(t *testing.T) {
 	todoStore, userStore := store.NewSQLStore()
-	server := SetupServer(todoStore,userStore)
+	server,_ := SetupServer(todoStore,userStore)
 
 	for i := 0; i < 50; i++ {
 		t.Run(fmt.Sprintf("ParallelTestV2-%d", i), func(t *testing.T) {
@@ -58,11 +58,11 @@ func TestConcurrentMultipleUsers(t *testing.T) {
 				Password: "password" + strconv.Itoa(i),
 			}
 
-			sendRequest(server, http.MethodPut, "/Users", user, map[string]string{
+			sendRequest(server.Handler, http.MethodPut, "/Users", user, map[string]string{
 				"Content-Type": "application/json",
 			})
 
-			resp := sendRequest(server, http.MethodPost, "/Users", user, map[string]string{
+			resp := sendRequest(server.Handler, http.MethodPost, "/Users", user, map[string]string{
 				"Content-Type": "application/json",
 			})
 			mustStatusOK(t, resp, "Login")
@@ -74,7 +74,7 @@ func TestConcurrentMultipleUsers(t *testing.T) {
 				Deadline: "2025-01-01",
 			}
 
-			resp = sendRequest(server, http.MethodPut, "/TodosV2", todo, map[string]string{
+			resp = sendRequest(server.Handler, http.MethodPut, "/TodosV2", todo, map[string]string{
 				"Content-Type":  "application/json",
 				"Authorization": "Bearer " + jwt,
 			})
