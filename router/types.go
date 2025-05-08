@@ -1,5 +1,7 @@
 package router
 
+import "github.com/PhilAldridge/TODO-GO/store"
+
 type V1PutBody struct {
 	Label    string
 	Deadline string
@@ -15,12 +17,8 @@ type V1DeleteBody struct {
 	Id string
 }
 
-type TodoApiHandler struct {
-	actor chan<- StoreCommand
-}
-
 type TodoApiHandlerV2 struct {
-	actor chan<- StoreCommand
+	actor    *store.StoreActor
 	username string
 }
 

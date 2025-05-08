@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/PhilAldridge/TODO-GO/auth"
@@ -30,9 +31,28 @@ func main() {
 
 	flag.Parse()
 
+	todoStore, usersStore:= SetupStores(*mode)
+	srv,actor := SetupServer(todoStore,usersStore)
+
+	
+	// Channel to listen for shutdown signals
+	stopCh := make(chan os.Signal, 1)
+	signal.Notify(stopCh, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		fmt.Println("Server listening on :8080")
+		http.ListenAndServe(lib.PortNo, srv.Handler)
+	}()
+	
+
+	<-stopCh
+	shutdown(srv,actor)
+}
+
+func SetupStores(mode string) (store.Store, users.Users) {
 	var todoStore store.Store
 	var usersStore users.Users
-	switch *mode {
+	switch mode {
 	case "mem":
 		todoStore = store.NewInMemoryTodoStore()
 		usersStore = users.NewInMemoryUsersStore()
@@ -45,33 +65,18 @@ func main() {
 	default:
 		log.Fatal("valid modes: json, mem,sql")
 	}
-
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	slog.SetDefault(logger)
-
-	fmt.Println("Server listening on :8080")
-	mux := SetupServer(todoStore,usersStore)
-
-	wrapped := logging.WithTraceIDAndLogger(
-		logging.LoggingMiddleware(mux),
-	)
-	srv:= &http.Server{
-		Addr: lib.PortNo,
-		Handler: mux,
-	}
-	idleConnsClosed:= shutdownChannel(srv)
-	http.ListenAndServe(lib.PortNo, wrapped)
-
-	<-idleConnsClosed
-	log.Println("Server shutdown complete")
+	return todoStore,usersStore
 }
 
-func SetupServer(todoStore store.Store, userStore users.Users) http.Handler {
+func SetupServer(todoStore store.Store, userStore users.Users) (*http.Server,*store.StoreActor) {
 	mux := http.NewServeMux()
-	//v1api := router.NewV1ApiHandler(todoStore)
 	usersapi := router.NewUserApiHandler(userStore)
-	v2api := router.NewV2ApiHandler(todoStore)
+	actor:=store.StartStoreActor(todoStore)
+	v2api := router.NewV2ApiHandler(actor)
 	fs:= http.FileServer(http.Dir("./static"))
+	
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
 
 	mux.Handle("/",fs)
 	mux.HandleFunc("GET /Todos",v2api.HandleGet)
@@ -86,31 +91,28 @@ func SetupServer(todoStore store.Store, userStore users.Users) http.Handler {
 	mux.HandleFunc("DELETE /TodosV2",auth.JWTMiddleware(v2api.HandleDelete))
 	mux.HandleFunc("GET /List",v2api.HandleList)
 
-	return mux
+	wrapped := logging.WithTraceIDAndLogger(
+		logging.LoggingMiddleware(mux),
+	)
+	srv:= &http.Server{
+		Addr: lib.PortNo,
+		Handler: wrapped,
+	}
+
+	return srv, actor
 }
 
-func shutdownChannel(srv *http.Server) chan struct{} {
-	// Channel to signal when shutdown is complete
-	idleConnsClosed := make(chan struct{})
-
-	// Handle interrupt signal for graceful shutdown
-	go func() {
-		sigint := make(chan os.Signal, 1)
-		signal.Notify(sigint, os.Interrupt)
-		<-sigint
-
-		log.Println("Shutdown signal received")
-
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+func shutdown(srv *http.Server, actor *store.StoreActor) {
+	fmt.Println("Shutdown signal received")
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
 
-		if err := srv.Shutdown(ctx); err != nil {
-			log.Printf("Server shutdown error: %v", err)
-			os.Exit(1)
-		}
-		close(idleConnsClosed)
-	}()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Printf("Server shutdown error: %v", err)
+		os.Exit(1)
+	}
 
-	return idleConnsClosed
+	actor.Stop()
+	log.Println("Server shutdown complete")
 }
 

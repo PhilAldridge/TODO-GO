@@ -11,8 +11,8 @@ import (
 	"github.com/google/uuid"
 )
 
-func NewV2ApiHandler(store store.Store) TodoApiHandlerV2 {
-	return TodoApiHandlerV2{actor:StartStoreActor(store)}
+func NewV2ApiHandler(actor *store.StoreActor) TodoApiHandlerV2 {
+	return TodoApiHandlerV2{actor:actor}
 }
 
 func (h *TodoApiHandlerV2) HandlePut(w http.ResponseWriter, r *http.Request) {
@@ -28,19 +28,19 @@ func (h *TodoApiHandlerV2) HandlePut(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Put must include a todo label and a deadline (in the form 2006-01-02)", http.StatusBadRequest)
 		return
 	}
-	replyCh := make(chan idErrReply)
-	h.actor <- AddTodoCmd{
-		label:    body.Label,
-		deadline: deadline,
-		username: h.username,
-		replyCh:  replyCh,
+	replyCh := make(chan store.IdErrReply)
+	h.actor.CommandChan <- store.AddTodoCmd{
+		Label:    body.Label,
+		Deadline: deadline,
+		Username: h.username,
+		ReplyCh:  replyCh,
 	}
 	reply := <-replyCh
-	if reply.err != nil {
-		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, reply.err), http.StatusInternalServerError)
+	if reply.Err != nil {
+		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, reply.Err), http.StatusInternalServerError)
 		return
 	}
-	w.Write([]byte(reply.id.String()))
+	w.Write([]byte(reply.Id.String()))
 }
 
 func (h *TodoApiHandlerV2) HandleGet(w http.ResponseWriter, r *http.Request) {
@@ -49,26 +49,26 @@ func (h *TodoApiHandlerV2) HandleGet(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuid.Parse(id)
 	if id == "" || err != nil {
 		replyCh:= make(chan []models.Todo)
-		h.actor <- GetTodoCmd{
-			username: h.username,
-			replyCh: replyCh,
+		h.actor.CommandChan <- store.GetTodoCmd{
+			Username: h.username,
+			ReplyCh: replyCh,
 		}
 		todos:=<-replyCh
 		marshalAndWrite(w, todos)
 		return
 	}
-	replyCh:= make(chan todoErrReply)
-	h.actor <- GetTodoByIdCmd{
-		id: uuid,
-		username: h.username,
-		replyCh: replyCh,
+	replyCh:= make(chan store.TodoErrReply)
+	h.actor.CommandChan <- store.GetTodoByIdCmd{
+		Id: uuid,
+		Username: h.username,
+		ReplyCh: replyCh,
 	}
 	reply:=<-replyCh
-	if reply.err != nil {
-		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, reply.err), http.StatusNotFound)
+	if reply.Err != nil {
+		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, reply.Err), http.StatusNotFound)
 		return
 	}
-	marshalAndWrite(w, reply.todo)
+	marshalAndWrite(w, reply.Todo)
 }
 
 func (h *TodoApiHandlerV2) HandlePatch(w http.ResponseWriter, r *http.Request) {
@@ -86,19 +86,19 @@ func (h *TodoApiHandlerV2) HandlePatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	replyCh:= make(chan todoErrReply)
-	h.actor <- UpdateTodoCmd{
-		id: uuid,
-		field: body.Field,
-		value: body.Value,
-		username: h.username,
-		replyCh: replyCh,
+	replyCh:= make(chan store.TodoErrReply)
+	h.actor.CommandChan <- store.UpdateTodoCmd{
+		Id: uuid,
+		Field: body.Field,
+		Value: body.Value,
+		Username: h.username,
+		ReplyCh: replyCh,
 	}
 	reply:= <-replyCh
-	if reply.err != nil {
-		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, reply.err), http.StatusNotFound)
+	if reply.Err != nil {
+		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, reply.Err), http.StatusNotFound)
 	}
-	marshalAndWrite(w, reply.todo)
+	marshalAndWrite(w, reply.Todo)
 }
 
 func (h *TodoApiHandlerV2) HandleDelete(w http.ResponseWriter, r *http.Request) {
@@ -116,10 +116,10 @@ func (h *TodoApiHandlerV2) HandleDelete(w http.ResponseWriter, r *http.Request) 
 	}
 
 	replyCh:= make(chan error)
-	h.actor<- DeleteTodoCmd{
-		id: uuid,
-		username: h.username,
-		replyCh: replyCh,
+	h.actor.CommandChan <- store.DeleteTodoCmd{
+		Id: uuid,
+		Username: h.username,
+		ReplyCh: replyCh,
 	}
 	err= <- replyCh
 	if err != nil {
@@ -141,9 +141,9 @@ func (h *TodoApiHandlerV2) setUsername(r *http.Request) {
 func (h *TodoApiHandlerV2) HandleList(w http.ResponseWriter, r *http.Request) {
 	h.setUsername(r)
 	replyCh := make (chan []models.Todo)
-	h.actor<-GetTodoCmd{
-		username: h.username,
-		replyCh: replyCh,
+	h.actor.CommandChan<-store.GetTodoCmd{
+		Username: h.username,
+		ReplyCh: replyCh,
 	}
 	todos:=<-replyCh
 	ServeTemplate("./webTemplates/list.html",todos,w)
